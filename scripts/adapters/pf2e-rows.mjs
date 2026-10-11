@@ -1,0 +1,72 @@
+/** Where PF2e sheets and pf2e-hud list items, attacks and spells. */
+const itemOf = (actor, id) => (id ? actor?.items?.get(id) ?? null : null);
+
+function strikeAt(actor, index, itemId) {
+  const i = Number(index);
+  const action = Number.isInteger(i) ? actor?.system?.actions?.[i] : null;
+  if (action?.item && (!itemId || action.item.id === itemId)) return { item: action.item, actionIndex: i };
+  return { item: itemOf(actor, itemId), actionIndex: null };
+}
+
+const hudActor = app => app?.actor ?? app?.parent?.actor ?? null;
+// Sheet rows: prefer the row's controls strip, else its name heading.
+const controlsHost = el => el.querySelector(':scope .item-controls, :scope .controls') ?? el.querySelector(':scope .item-name, :scope .name, :scope h4') ?? el;
+// pf2e-hud sidebar rows: their `.controls` are ammo/variant strips, so use the name line.
+const nameHost = el => el.querySelector(':scope .name') ?? el;
+
+export const pf2eRows = [
+  {
+    hooks: ['renderCharacterSheetPF2e'],
+    selector: 'li.strike[data-action-index]',
+    resolve: (el, app) => ({ actor: app.actor, ...strikeAt(app.actor, el.dataset.actionIndex, null) }),
+    host: controlsHost
+  },
+  {
+    hooks: ['renderNPCSheetPF2e'],
+    selector: 'li.item.action[data-action-index][data-item-id]',
+    resolve: (el, app) => ({ actor: app.actor, ...strikeAt(app.actor, el.dataset.actionIndex, el.dataset.itemId) }),
+    host: controlsHost
+  },
+  {
+    hooks: ['renderActorSheetPF2e'],
+    selector: 'li.spell[data-item-id]',
+    resolve: (el, app) => ({ actor: app.actor, item: itemOf(app.actor, el.dataset.itemId), actionIndex: null }),
+    host: controlsHost
+  },
+  {
+    hooks: ['renderCharacterSheetPF2e'],
+    selector: '.tab.inventory li[data-item-id]',
+    resolve: (el, app) => {
+      const item = itemOf(app.actor, el.dataset.itemId);
+      return item?.type === 'weapon' ? { actor: app.actor, item, actionIndex: null } : null;
+    },
+    host: controlsHost
+  },
+  {
+    hooks: ['renderActionsSidebarPF2eHUD'],
+    selector: '.item.attack[data-item-id]',
+    resolve: (el, app) => ({ actor: hudActor(app), ...strikeAt(hudActor(app), el.dataset.index, el.dataset.itemId) }),
+    host: nameHost
+  },
+  {
+    hooks: ['renderSpellsSidebarPF2eHUD'],
+    selector: '.item[data-item-type="spell"][data-item-id]',
+    resolve: (el, app) => ({ actor: hudActor(app), item: itemOf(hudActor(app), el.dataset.itemId), actionIndex: null }),
+    host: nameHost
+  },
+  {
+    hooks: ['renderItemsSidebarPF2eHUD'],
+    selector: '.item[data-item-id]',
+    resolve: (el, app) => {
+      const item = itemOf(hudActor(app), el.dataset.itemId);
+      return item?.type === 'weapon' ? { actor: hudActor(app), item, actionIndex: null } : null;
+    },
+    host: controlsHost
+  },
+  {
+    hooks: ['renderPersistentShortcutsPF2eHUD'],
+    selector: '.item.shortcut[data-item-id]',
+    resolve: (el, app) => ({ actor: hudActor(app), item: itemOf(hudActor(app), el.dataset.itemId), actionIndex: null }),
+    persistentHud: true
+  }
+];

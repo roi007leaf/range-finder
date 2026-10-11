@@ -1,6 +1,7 @@
 /** PF2e adapter: item → RangeSpec, PF2e measuring rules, token distance. */
 import { alternatingDistance } from '../core/cells.mjs';
 import { incrementBands, makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
+import { pf2eRows } from './pf2e-rows.mjs';
 
 const sluggify = text => String(text ?? '').toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 const traitsOf = item => item?.system?.traits?.value ?? [];
@@ -72,4 +73,4 @@ export function distance(source, target, spec) {
   return source.distanceTo(target, options);
 }
 
-export const pf2eAdapter = { id: 'pf2e', specFor, cellMeasure, distance, rows: [] };
+export const pf2eAdapter = { id: 'pf2e', specFor, cellMeasure, distance, rows: pf2eRows };
