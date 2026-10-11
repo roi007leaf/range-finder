@@ -2,6 +2,8 @@
 export const GHOST_CLASS = 'range-finder-ghost';
 export const GHOSTABLE_CLASS = 'range-finder-ghostable';
 
+const log = (...args) => console.error('Range Finder |', ...args);
+
 export class Ghost {
   #held = new Map();
   #listening = false;
@@ -13,22 +15,29 @@ export class Ghost {
 
   hold(el, { sticky = false } = {}) {
     if (!el) return;
-    let entry = this.#held.get(el);
-    if (!entry) {
-      const mode = this.mode();
-      if (mode === 'off') return;
-      entry = { pins: 0, previews: 0, app: null };
-      if (mode === 'minimize') {
-        const app = this.appFor(el);
-        if (app && !app.minimized) { entry.app = app; app.minimize?.(); }
-      } else {
-        el.classList.add(GHOSTABLE_CLASS, GHOST_CLASS);
+    try {
+      let entry = this.#held.get(el);
+      if (!entry) {
+        const mode = this.mode();
+        if (mode === 'off') return;
+        entry = { mode: mode === 'minimize' ? 'minimize' : 'fade', pins: 0, previews: 0, app: null };
+        if (entry.mode === 'minimize') {
+          const app = this.appFor(el);
+          if (app && !app.minimized) { entry.app = app; this.#call(app, 'minimize'); }
+        } else {
+          el.classList.add(GHOSTABLE_CLASS, GHOST_CLASS);
+        }
+        this.#held.set(el, entry);
+      } else if (!sticky && entry.mode === 'fade') {
+        // A preview always ghosts the window, even if hover had restored a pinned one.
+        el.classList.add(GHOST_CLASS);
       }
-      this.#held.set(el, entry);
+      if (sticky) entry.pins++;
+      else entry.previews++;
+      this.#listen();
+    } catch (error) {
+      log(error);
     }
-    if (sticky) entry.pins++;
-    else entry.previews++;
-    this.#listen();
   }
 
   release(el, { sticky = false } = {}) {
@@ -52,18 +61,36 @@ export class Ghost {
 
   onMove(event) {
     for (const [el, entry] of this.#held) {
-      if (!el.isConnected) { this.#held.delete(el); continue; }
-      if (entry.app || entry.previews > 0) continue;
-      const rect = el.getBoundingClientRect();
-      const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-      el.classList.toggle(GHOST_CLASS, !inside);
+      try {
+        if (!el.isConnected) { this.#held.delete(el); continue; }
+        if (entry.mode !== 'fade' || entry.previews > 0) continue;
+        const rect = el.getBoundingClientRect();
+        const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
+        el.classList.toggle(GHOST_CLASS, !inside);
+      } catch (error) {
+        log(error);
+      }
     }
     if (!this.#held.size) this.#unlisten();
   }
 
+  #call(app, method) {
+    try {
+      // AppV2 minimize/maximize return promises; a rejection must not go unhandled.
+      const result = app[method]?.();
+      result?.catch?.(error => log(error));
+    } catch (error) {
+      log(error);
+    }
+  }
+
   #restore(el, entry) {
-    el.classList.remove(GHOST_CLASS);
-    if (entry.app) entry.app.maximize?.();
+    try {
+      el.classList.remove(GHOST_CLASS);
+    } catch (error) {
+      log(error);
+    }
+    if (entry.app) this.#call(entry.app, 'maximize');
   }
 
   #listen() {

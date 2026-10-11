@@ -100,3 +100,63 @@ test('releaseAll restores everything and forgets disconnected elements', () => {
   assert.ok(!a.classList.contains(GHOST_CLASS));
   assert.ok(!d.listeners.has('pointermove'));
 });
+
+test('preview re-ghosts a hover-restored pinned window; hover restore resumes after', () => {
+  const el = element(), ghost = new Ghost({ doc: doc() });
+  ghost.hold(el, { sticky: true });
+  ghost.onMove({ clientX: 50, clientY: 50 });
+  assert.ok(!el.classList.contains(GHOST_CLASS));
+  ghost.hold(el, { sticky: false });
+  assert.ok(el.classList.contains(GHOST_CLASS));
+  ghost.release(el, { sticky: false });
+  ghost.onMove({ clientX: 50, clientY: 50 });
+  assert.ok(!el.classList.contains(GHOST_CLASS));
+});
+
+test('minimize mode never fades a window without an app', () => {
+  const el = element(), ghost = new Ghost({ doc: doc(), mode: () => 'minimize', appFor: () => null });
+  ghost.hold(el, { sticky: true });
+  ghost.onMove({ clientX: 500, clientY: 500 });
+  assert.ok(!el.classList.contains(GHOST_CLASS));
+  assert.ok(!el.classList.contains(GHOSTABLE_CLASS));
+  ghost.release(el, { sticky: true });
+  assert.ok(!ghost.isGhosted(el));
+});
+
+test('releaseAll restores the rest when one maximize throws', () => {
+  const original = console.error;
+  console.error = () => {};
+  try {
+    const d = doc(), a = element(), b = element();
+    let restoredB = false;
+    const appA = { minimized: false, minimize() {}, maximize() { throw new Error('boom'); } };
+    const appB = { minimized: false, minimize() {}, maximize() { restoredB = true; } };
+    const ghost = new Ghost({ doc: d, mode: () => 'minimize', appFor: el => (el === a ? appA : appB) });
+    ghost.hold(a, { sticky: true });
+    ghost.hold(b, { sticky: true });
+    ghost.releaseAll();
+    assert.ok(restoredB);
+    assert.ok(!ghost.isGhosted(b));
+    assert.ok(!d.listeners.has('pointermove'));
+  } finally {
+    console.error = original;
+  }
+});
+
+test('rejected async maximize is caught, not left unhandled', async () => {
+  const original = console.error;
+  const logged = [];
+  console.error = (...args) => logged.push(args);
+  try {
+    const app = { minimized: false, minimize() {}, maximize: () => Promise.reject(new Error('async')) };
+    const ghost = new Ghost({ doc: doc(), mode: () => 'minimize', appFor: () => app });
+    const el = element();
+    ghost.hold(el, { sticky: true });
+    ghost.release(el, { sticky: true });
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(logged.length, 1);
+    assert.equal(logged[0][0], 'Range Finder |');
+  } finally {
+    console.error = original;
+  }
+});
