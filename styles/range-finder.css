@@ -26,3 +26,10 @@
 #pf2e-hud-persistent .item.shortcut > .range-finder-btn:hover,
 .item.shortcut > .range-finder-btn.is-active,
 #pf2e-hud-persistent .item.shortcut > .range-finder-btn.is-active { color: #2ec4b6; background: rgb(0 0 0 / 80%); }
+/* Inside a sheet's control strip, sit like the sibling icon links (edit, delete) with a little breathing room. */
+:is(.item-controls, .controls) > .range-finder-btn { width: 1.375rem; height: 1.375rem; margin: 0 0 0 .25rem; }
+/* PF2e spell lists reserve a fixed 3rem controls column; widen it on every row (header included) so columns stay aligned. */
+.actor.sheet section.window-content form.crb-style .sheet-body .sheet-content ol.spell-list:has(.range-finder-btn) > li,
+.actor.npc.sheet form ol.spell-list:has(.range-finder-btn) > li { --controls-width: 4.75rem; }
+/* Character inventory rows also use a fixed-width controls strip. */
+.actor.sheet section.window-content .inventory :is(.inventory-list, ul.items):has(.range-finder-btn) .item-controls { flex-basis: 7.25rem; }
