@@ -72,12 +72,15 @@ export class Triggers {
       if (!quiet) this.notify(this.localize('RANGE_FINDER.Notify.NoToken'));
       return null;
     }
-    const ghostable = !entry.def.persistentHud || this.settings().ghostPersistentHud;
+    const includeBar = Boolean(this.settings().ghostPersistentHud);
+    let sourceEl;
+    if (entry.def.ghostTargets) sourceEl = entry.def.ghostTargets(row, { includeBar }).filter(Boolean);
+    else sourceEl = !entry.def.persistentHud || includeBar ? row.closest(WINDOW_SELECTOR) : null;
     return {
       tokenId: token.id,
       itemUuid: entry.ctx.item.uuid,
       actionIndex: entry.ctx.actionIndex ?? null,
-      sourceEl: ghostable ? row.closest(WINDOW_SELECTOR) : null
+      sourceEl
     };
   }
 

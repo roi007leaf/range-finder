@@ -155,3 +155,13 @@ test('pf2e-hud spell rows resolve consumable spells through their entry', async 
   hudActor.items.set('arc', owned);
   assert.equal(row.resolve({ dataset: { entryId: 'missing', itemId: 'arc' } }, { actor: hudActor }).item, owned);
 });
+
+test('pf2e-hud rows fade the sidebar and token HUD, and the bar only when enabled', async () => {
+  const { pf2eRows } = await import('../scripts/adapters/pf2e-rows.mjs');
+  const els = { 'pf2e-hud-sidebar': { id: 'sidebar' }, 'pf2e-hud-token': null, 'pf2e-hud-persistent': { id: 'bar' } };
+  const row = { ownerDocument: { getElementById: id => els[id] ?? null } };
+  const spells = pf2eRows.find(r => r.hooks.includes('renderSpellsSidebarPF2eHUD'));
+  assert.deepEqual(spells.ghostTargets(row, { includeBar: false }).map(e => e.id), ['sidebar']);
+  assert.deepEqual(spells.ghostTargets(row, { includeBar: true }).map(e => e.id), ['sidebar', 'bar']);
+  assert.ok(pf2eRows.filter(r => r.hooks.some(h => h.endsWith('PF2eHUD'))).every(r => r.ghostTargets));
+});

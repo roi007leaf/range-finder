@@ -13,7 +13,9 @@ export class Ghost {
     this.onMove = this.onMove.bind(this);
   }
 
+  /** `el` may be one element or a list (e.g. a HUD sidebar together with its bar). */
   hold(el, { sticky = false } = {}) {
+    if (Array.isArray(el)) { for (const one of el) this.hold(one, { sticky }); return; }
     if (!el) return;
     try {
       let entry = this.#held.get(el);
@@ -41,6 +43,7 @@ export class Ghost {
   }
 
   release(el, { sticky = false } = {}) {
+    if (Array.isArray(el)) { for (const one of el) this.release(one, { sticky }); return; }
     const entry = el ? this.#held.get(el) : null;
     if (!entry) return;
     if (sticky) entry.pins = Math.max(0, entry.pins - 1);

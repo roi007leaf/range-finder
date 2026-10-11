@@ -146,3 +146,11 @@ test('a throwing resolver never breaks decoration of other rows', () => {
   try { triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet'); } finally { console.error = original; }
   assert.ok(doc.querySelector('[data-id="bow"] .range-finder-btn'));
 });
+
+test('rows with ghostTargets ghost those elements instead of the closest window', () => {
+  const { doc, dom, triggers, calls } = setup({ settings: { ghostPersistentHud: true } });
+  triggers.adapter.rows[1].ghostTargets = (row, { includeBar }) => (includeBar ? [doc.getElementById('hud'), doc.getElementById('sheet')] : []);
+  triggers.decorate(doc.getElementById('hud'), {}, 'renderHud');
+  doc.querySelector('.slot .range-finder-btn').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  assert.deepEqual(calls[0][1].sourceEl.map(el => el.id), ['hud', 'sheet']);
+});

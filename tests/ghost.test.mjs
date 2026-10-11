@@ -160,3 +160,12 @@ test('rejected async maximize is caught, not left unhandled', async () => {
     console.error = original;
   }
 });
+
+test('hold/release accept a list of elements (HUD sidebar + bar)', () => {
+  const a = element(), b = element(), ghost = new Ghost({ doc: doc() });
+  ghost.hold([a, b], { sticky: true });
+  assert.ok(a.classList.contains(GHOST_CLASS) && b.classList.contains(GHOST_CLASS));
+  ghost.release([a, b], { sticky: true });
+  assert.ok(!a.classList.contains(GHOST_CLASS) && !b.classList.contains(GHOST_CLASS));
+  assert.ok(!ghost.isGhosted(a) && !ghost.isGhosted(b));
+});

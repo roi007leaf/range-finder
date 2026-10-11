@@ -9,6 +9,11 @@ function strikeAt(actor, index, itemId) {
 }
 
 const hudActor = app => app?.actor ?? app?.parent?.actor ?? null;
+// pf2e-hud panels to fade together while a range shows: the sidebar and token HUD always, the persistent bar when enabled.
+const hudGhost = (row, { includeBar }) => {
+  const byId = id => row.ownerDocument?.getElementById(id) ?? null;
+  return [...new Set([byId('pf2e-hud-sidebar'), byId('pf2e-hud-token'), includeBar ? byId('pf2e-hud-persistent') : null])].filter(Boolean);
+};
 // Scroll, wand and staff spells live in their entry's collection, not in actor.items.
 const spellOf = (actor, entryId, id) => (entryId && id ? actor?.spellcasting?.collections?.get(entryId)?.get(id) : null) ?? itemOf(actor, id);
 // Sheet rows: prefer the row's controls strip, else its name heading.
@@ -48,13 +53,15 @@ export const pf2eRows = [
     hooks: ['renderActionsSidebarPF2eHUD'],
     selector: '.item.attack[data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), ...strikeAt(hudActor(app), el.dataset.index, el.dataset.itemId) }),
-    host: nameHost
+    host: nameHost,
+    ghostTargets: hudGhost
   },
   {
     hooks: ['renderSpellsSidebarPF2eHUD'],
     selector: '.item[data-item-type="spell"][data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), item: spellOf(hudActor(app), el.dataset.entryId, el.dataset.itemId), actionIndex: null }),
-    host: nameHost
+    host: nameHost,
+    ghostTargets: hudGhost
   },
   {
     hooks: ['renderItemsSidebarPF2eHUD'],
@@ -63,12 +70,14 @@ export const pf2eRows = [
       const item = itemOf(hudActor(app), el.dataset.itemId);
       return item?.type === 'weapon' ? { actor: hudActor(app), item, actionIndex: null } : null;
     },
-    host: controlsHost
+    host: controlsHost,
+    ghostTargets: hudGhost
   },
   {
     hooks: ['renderPersistentShortcutsPF2eHUD'],
     selector: '.item.shortcut[data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), item: itemOf(hudActor(app), el.dataset.itemId), actionIndex: null }),
-    persistentHud: true
+    persistentHud: true,
+    ghostTargets: hudGhost
   }
 ];
