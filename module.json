@@ -1,0 +1,15 @@
+{
+  "id": "range-finder",
+  "title": "Range Finder",
+  "description": "See an item's, attack's or spell's range on the canvas: penalty bands, reach, and per-target distance and penalty badges. PF2e support built in.",
+  "version": "0.1.0",
+  "authors": [{ "name": "RoiLeaf" }],
+  "compatibility": { "minimum": "13", "verified": "14" },
+  "esmodules": ["main.mjs"],
+  "styles": ["styles/range-finder.css"],
+  "languages": [{ "lang": "en", "name": "English", "path": "lang/en.json" }],
+  "socket": true,
+  "relationships": {
+    "recommends": [{ "id": "pf2e-hud", "type": "module" }]
+  }
+}

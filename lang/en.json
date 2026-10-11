@@ -1,0 +1,24 @@
+{
+  "RANGE_FINDER": {
+    "Button": { "Show": "Show range (Shift+click to share)" },
+    "Notify": { "NoToken": "Range Finder: this actor has no token on the current scene." },
+    "Controls": { "ClearShared": "Range Finder — clear shared ranges" },
+    "Keys": {
+      "Preview": { "Name": "Preview hovered range", "Hint": "Hold while hovering an item, attack or spell row to preview its range." },
+      "Clear": { "Name": "Clear my ranges", "Hint": "Clear your pinned ranges and previews." },
+      "ClearShared": { "Name": "Clear shared ranges (GM)", "Hint": "Clear every shared range for all players." }
+    },
+    "Settings": {
+      "bandStyle": { "Name": "Range Finder: band style", "Hint": "How range bands are drawn.", "Choices": { "fill": "Fill only", "outline": "Outline only", "both": "Fill and outline" } },
+      "bandOpacity": { "Name": "Range Finder: band opacity", "Hint": "Multiplier for band fill opacity." },
+      "showLabels": { "Name": "Range Finder: band labels", "Hint": "Show distance and penalty labels on band edges." },
+      "badgeScale": { "Name": "Range Finder: badge size", "Hint": "Size of the distance badges above tokens." },
+      "palette": { "Name": "Range Finder: colors", "Hint": "Color palette for bands and badges.", "Choices": { "default": "Default", "colorblind": "Colorblind-safe" } },
+      "dimBehindWalls": { "Name": "Range Finder: dim behind walls", "Hint": "Hatch squares and mark targets without line of effect from the token. Range itself is unchanged." },
+      "ghostMode": { "Name": "Range Finder: hide windows while showing range", "Hint": "What happens to the sheet or HUD window a range was shown from.", "Choices": { "fade": "Fade (hover to restore)", "minimize": "Minimize", "off": "Do nothing" } },
+      "ghostPersistentHud": { "Name": "Range Finder: also hide PF2e HUD bar", "Hint": "Also fade the PF2e HUD persistent bar when a range is shown from it." },
+      "allowSharing": { "Name": "Range Finder: allow sharing", "Hint": "Let players Shift+click to show a range to everyone." },
+      "badgesCombatOnly": { "Name": "Range Finder: badges only in combat", "Hint": "Only show distance badges on combatants of the active combat." }
+    }
+  }
+}
