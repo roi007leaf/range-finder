@@ -68,7 +68,7 @@
       },
       "ghostPersistentHud": {
         "Name": "Range Finder: also hide PF2e HUD bar",
-        "Hint": "When a range is shown from PF2e HUD, its sidebar and token HUD fade like sheets. Also fade the persistent bar."
+        "Hint": "When a range is shown from PF2e HUD, only its sidebar fades. Also fade the persistent bar."
       },
       "allowSharing": {
         "Name": "Range Finder: allow sharing",

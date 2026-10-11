@@ -10,7 +10,7 @@ export const SETTINGS = {
   palette: { scope: 'client', type: String, default: 'default', choices: choices('palette', ['default', 'colorblind']) },
   dimBehindWalls: { scope: 'client', type: Boolean, default: false },
   ghostMode: { scope: 'client', type: String, default: 'fade', choices: choices('ghostMode', ['fade', 'minimize', 'off']) },
-  ghostPersistentHud: { scope: 'client', type: Boolean, default: true },
+  ghostPersistentHud: { scope: 'client', type: Boolean, default: false },
   allowSharing: { scope: 'world', type: Boolean, default: true },
   badgesCombatOnly: { scope: 'world', type: Boolean, default: false }
 };

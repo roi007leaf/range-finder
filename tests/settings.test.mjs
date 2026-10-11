@@ -18,7 +18,7 @@ test('registers every setting with the spec defaults and scopes', () => {
   const expected = {
     bandStyle: ['client', 'both'], bandOpacity: ['client', 1], showLabels: ['client', true], badgeScale: ['client', 1],
     palette: ['client', 'default'], dimBehindWalls: ['client', false], ghostMode: ['client', 'fade'],
-    ghostPersistentHud: ['client', true], allowSharing: ['world', true], badgesCombatOnly: ['world', false]
+    ghostPersistentHud: ['client', false], allowSharing: ['world', true], badgesCombatOnly: ['world', false]
   };
   assert.deepEqual([...settings.registered.keys()].sort(), Object.keys(expected).sort());
   for (const [key, [scope, value]] of Object.entries(expected)) {

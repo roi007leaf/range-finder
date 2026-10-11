@@ -9,10 +9,10 @@ function strikeAt(actor, index, itemId) {
 }
 
 const hudActor = app => app?.actor ?? app?.parent?.actor ?? null;
-// pf2e-hud panels to fade together while a range shows: the sidebar and token HUD always, the persistent bar when enabled.
+// pf2e-hud panels to fade while a range shows: just the sidebar, plus the persistent bar when enabled.
 const hudGhost = (row, { includeBar }) => {
   const byId = id => row.ownerDocument?.getElementById(id) ?? null;
-  return [...new Set([byId('pf2e-hud-sidebar'), byId('pf2e-hud-token'), includeBar ? byId('pf2e-hud-persistent') : null])].filter(Boolean);
+  return [...new Set([byId('pf2e-hud-sidebar'), includeBar ? byId('pf2e-hud-persistent') : null])].filter(Boolean);
 };
 // Scroll, wand and staff spells live in their entry's collection, not in actor.items.
 const spellOf = (actor, entryId, id) => (entryId && id ? actor?.spellcasting?.collections?.get(entryId)?.get(id) : null) ?? itemOf(actor, id);
