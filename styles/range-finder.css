@@ -15,7 +15,7 @@
 }
 /* pf2e-hud persistent shortcut tiles have no controls area: pin the button to the tile's top-right corner.
    The tile styles every child absolute with pointer-events: none, so re-enable pointer events. */
-.item.shortcut { position: relative; }
+#pf2e-hud-persistent .item.shortcut { position: relative; }
 .item.shortcut > .range-finder-btn,
 #pf2e-hud-persistent .item.shortcut > .range-finder-btn {
   position: absolute; top: 2px; right: 2px; margin: 0; width: 1.4em; height: 1.4em; font-size: .75em;

@@ -35,8 +35,8 @@ function appForElement(el) {
 function build({ tokenId, itemUuid, actionIndex }) {
   try {
     const token = canvas.tokens?.get(tokenId);
-    const item = fromUuidSync(itemUuid);
-    if (!token?.actor || !item) return null;
+    const item = itemUuid ? fromUuidSync(itemUuid) : null;
+    if (!token?.actor || (!item && actionIndex == null)) return null;
     return adapter.specFor({ actor: token.actor, token, item, actionIndex });
   } catch (error) {
     report(error);
@@ -106,12 +106,14 @@ Hooks.once('init', () => {
     onUp: () => { triggers?.keyUp(); return false; },
     precedence: CONST.KEYBINDING_PRECEDENCE.NORMAL
   });
-  game.keybindings.register(MODULE_ID, 'clear', {
+  game.keybindings.register(MODULE_ID, 'clearAll', {
     name: 'RANGE_FINDER.Keys.Clear.Name', hint: 'RANGE_FINDER.Keys.Clear.Hint',
     editable: [{ key: 'Escape' }],
     onDown: () => clearLocal(),
     precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY
   });
+  // Register adapters during init.
+  game.modules.get(MODULE_ID).api = { registerAdapter, clear: clearLocal };
   game.keybindings.register(MODULE_ID, 'clearShared', {
     name: 'RANGE_FINDER.Keys.ClearShared.Name', hint: 'RANGE_FINDER.Keys.ClearShared.Hint',
     editable: [], restricted: true,
@@ -119,8 +121,18 @@ Hooks.once('init', () => {
   });
 });
 
-Hooks.once('ready', () => {
+Hooks.once('setup', () => {
   adapter = getAdapter(game.system.id);
+  for (const hook of new Set((adapter.rows ?? []).flatMap(row => row.hooks ?? []))) {
+    Hooks.on(hook, (app, html) => {
+      try {
+        triggers?.decorate(rootOf(html, app), app, hook);
+      } catch (error) { report(error); }
+    });
+  }
+});
+
+Hooks.once('ready', () => {
   ghost = new Ghost({ mode: () => readSettings().ghostMode, appFor: appForElement });
   pins = new PinManager({
     userId: game.user.id,
@@ -146,14 +158,7 @@ Hooks.once('ready', () => {
       pins.receive(message);
     } catch (error) { report(error); }
   });
-  for (const hook of new Set((adapter.rows ?? []).flatMap(row => row.hooks ?? []))) {
-    Hooks.on(hook, (app, html) => {
-      try {
-        triggers.decorate(rootOf(html, app), app, hook);
-      } catch (error) { report(error); }
-    });
-  }
-  game.modules.get(MODULE_ID).api = { registerAdapter, clear: clearLocal };
+  window.addEventListener('blur', () => triggers?.keyUp());
   if (canvas?.ready) setupCanvas();
 });
 

@@ -41,3 +41,12 @@ test('readSettings returns every key', () => {
   assert.deepEqual(Object.keys(values).sort(), Object.keys(SETTINGS).sort());
   assert.equal(values.ghostMode, 'fade');
 });
+
+test('a custom localize is applied to name, hint and choice labels', () => {
+  const settings = fakeSettings();
+  registerSettings(() => {}, settings, key => `L:${key}`);
+  const data = settings.registered.get('ghostMode');
+  assert.equal(data.name, 'L:RANGE_FINDER.Settings.ghostMode.Name');
+  assert.equal(data.hint, 'L:RANGE_FINDER.Settings.ghostMode.Hint');
+  assert.equal(data.choices.fade, 'L:RANGE_FINDER.Settings.ghostMode.Choices.fade');
+});
