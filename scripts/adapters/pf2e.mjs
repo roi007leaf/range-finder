@@ -19,13 +19,15 @@ function weaponSpec(actor, item) {
   const volley = traitNumber(item, 'volley');
   if (volley) overlays.push({ min: 0, max: volley, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2' });
   const melee = item.isMelee ?? !range;
-  const increments = range?.increment ? incrementBands(range.increment, range.max ?? range.increment * 6) : null;
   if (melee) {
-    const reach = actor?.getReach?.({ action: 'attack', weapon: item }) ?? 5;
+    const reach = actor?.getReach?.({ action: 'attack', weapon: item }) || 5;
     const reachBand = { min: 0, max: reach, penalty: 0, tone: 'reach', label: `Reach ${reach} ft` };
-    if (increments?.length) return makeSpec({ kind: 'increments', bands: increments, overlays: [reachBand, ...overlays], itemName: name });
+    // Real PF2e melee weapons have range null; a thrown melee weapon carries its increment in a thrown-N trait.
+    const thrown = traitNumber(item, 'thrown') ?? (range?.increment || null);
+    if (thrown) return makeSpec({ kind: 'increments', bands: incrementBands(thrown, thrown * 6), overlays: [reachBand, ...overlays], itemName: name });
     return makeSpec({ kind: 'reach', bands: [reachBand], overlays, itemName: name });
   }
+  const increments = range?.increment ? incrementBands(range.increment, range.max ?? range.increment * 6) : null;
   if (increments?.length) return makeSpec({ kind: 'increments', bands: increments, overlays, itemName: name });
   if (range?.max > 0) return makeSpec({ kind: 'radius', bands: singleBand(range.max), overlays, itemName: name });
   return noneSpec('Range: —', name);

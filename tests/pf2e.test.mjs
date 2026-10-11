@@ -5,7 +5,7 @@ import { cellMeasure, distance, pf2eAdapter, specFor } from '../scripts/adapters
 const weapon = (name, { melee = false, range = null, traits = [] } = {}) => ({ name, type: 'weapon', isMelee: melee, range, system: { traits: { value: traits } } });
 const longbow = weapon('Longbow', { range: { increment: 100, max: 600 }, traits: ['deadly-d10', 'volley-30'] });
 const javelin = weapon('Javelin', { range: { increment: 30, max: 180 }, traits: ['thrown'] });
-const dagger = weapon('Dagger', { melee: true, range: { increment: 10, max: 60 }, traits: ['agile', 'thrown-10'] });
+const dagger = weapon('Dagger', { melee: true, traits: ['agile', 'thrown-10'] });
 const whip = weapon('Whip', { melee: true, traits: ['reach', 'disarm'] });
 const npcClaw = { name: 'Claw', type: 'melee', isMelee: true, range: null, system: { traits: { value: ['reach-15'] } } };
 const spell = (name, range, area = null) => ({ name, type: 'spell', system: { range: { value: range }, area } });
@@ -40,6 +40,24 @@ test('dagger: thrown increments plus reach overlay', () => {
   assert.equal(spec.kind, 'increments');
   assert.equal(spec.bands[0].max, 10);
   assert.deepEqual(spec.overlays, [{ min: 0, max: 5, penalty: 0, tone: 'reach', label: 'Reach 5 ft' }]);
+});
+
+test('melee weapon with plain thrown trait and no number or range is reach-only', () => {
+  const spec = specFor({ actor, item: weapon('Throwing Knife', { melee: true, traits: ['thrown'] }) });
+  assert.equal(spec.kind, 'reach');
+  assert.deepEqual(spec.bands, [{ min: 0, max: 5, penalty: 0, tone: 'reach', label: 'Reach 5 ft' }]);
+  assert.deepEqual(spec.overlays, []);
+});
+
+test('ranged NPC melee item with range is increments; max-only range is radius', () => {
+  const npcBow = { name: 'Spit', type: 'melee', isMelee: false, range: { increment: 30, max: 180 }, system: { traits: { value: [] } } };
+  const npcSpit = specFor({ actor, item: npcBow });
+  assert.equal(npcSpit.kind, 'increments');
+  assert.deepEqual(npcSpit.bands.map(b => b.max), [30, 60, 90, 120, 150, 180]);
+  const maxOnly = { name: 'Gaze', type: 'weapon', isMelee: false, range: { increment: null, max: 60 }, system: { traits: { value: [] } } };
+  const gaze = specFor({ actor, item: maxOnly });
+  assert.equal(gaze.kind, 'radius');
+  assert.equal(gaze.bands[0].max, 60);
 });
 
 test('whip and NPC reach', () => {
