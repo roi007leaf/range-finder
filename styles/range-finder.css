@@ -5,6 +5,7 @@
   transition: color .15s, background-color .15s, box-shadow .15s;
 }
 .range-finder-btn:hover { color: #2ec4b6; background: rgb(46 196 182 / 12%); }
+.range-finder-btn:focus-visible { outline: 2px solid #2ec4b6; outline-offset: 1px; }
 .range-finder-btn.is-active { color: #2ec4b6; background: rgb(46 196 182 / 18%); box-shadow: 0 0 6px rgb(46 196 182 / 60%); }
 .range-finder-btn.is-shared { color: var(--range-finder-user, #2ec4b6); box-shadow: 0 0 0 1px currentColor, 0 0 8px currentColor; }
 .range-finder-btn.is-disabled { opacity: .4; cursor: help; }

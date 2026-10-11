@@ -126,12 +126,47 @@ test('rebuild refreshes specs and drops pins whose item lost its range (Review F
   assert.equal(pins.all()[0].spec.bands[0].max, 90);
 });
 
-test('reset clears everything without broadcasting', () => {
+test('reset clears everything and only broadcasts unpin for own shared pins (final 2)', () => {
   const { pins, sent, ghostLog } = setup();
   pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow', share: true, sourceEl: 'sheet' });
+  pins.toggle({ tokenId: 't3', itemUuid: 'Item.sword' });
+  pins.preview({ tokenId: 't3', itemUuid: 'Item.bow' });
+  pins.receive({ action: 'pin', userId: 'ally', tokenId: 't2', itemUuid: 'Item.bow' });
   sent.length = 0;
   pins.reset();
   assert.equal(pins.size, 0);
+  assert.deepEqual(sent, [{ action: 'unpin', userId: 'me', tokenId: 't1' }]);
+  assert.ok(ghostLog.some(e => e[0] === 'release' && e[1] === 'sheet' && e[2] === true));
+});
+
+test('dropUser removes a disconnected user\'s shared pins (final 2)', () => {
+  const { pins, sent, changes } = setup();
+  pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow' });
+  pins.receive({ action: 'pin', userId: 'ally', tokenId: 't2', itemUuid: 'Item.bow' });
+  pins.receive({ action: 'pin', userId: 'ally', tokenId: 't3', itemUuid: 'Item.sword' });
+  pins.receive({ action: 'pin', userId: 'other', tokenId: 't2', itemUuid: 'Item.bow' });
+  sent.length = 0;
+  const before = changes();
+  pins.dropUser('ally');
+  assert.deepEqual(pins.all().map(p => p.userId), ['me', 'other']);
+  assert.equal(changes(), before + 1);
   assert.deepEqual(sent, []);
-  assert.deepEqual(ghostLog.at(-1), ['release', 'sheet', true]);
+  pins.dropUser('nobody');
+  assert.equal(changes(), before + 1, 'no change, no redraw');
+});
+
+test('shift+click on an unshared pin shares it; plain click still unpins (final 7)', () => {
+  const { pins, sent } = setup();
+  pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow', sourceEl: 'sheet' });
+  assert.equal(pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow', share: true }), 'shared');
+  assert.equal(pins.all()[0].shared, true);
+  assert.equal(pins.all()[0].sourceEl, 'sheet');
+  assert.deepEqual(sent, [{ action: 'pin', userId: 'me', tokenId: 't1', itemUuid: 'Item.bow', actionIndex: null }]);
+  assert.equal(pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow', share: true }), 'unpinned', 'already shared → unpin');
+  const off = setup({ allowShare: false });
+  off.pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow' });
+  assert.equal(off.pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow', share: true }), 'unpinned', 'sharing disabled → plain toggle');
+  const plain = setup();
+  plain.pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow' });
+  assert.equal(plain.pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow' }), 'unpinned');
 });

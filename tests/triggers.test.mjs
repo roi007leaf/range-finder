@@ -68,6 +68,24 @@ test('click toggles a pin with the source window; shift shares; disabled does no
   assert.equal(calls.length, 1);
 });
 
+test('buttons are keyboard operable; disabled ones are aria-disabled (final 8)', () => {
+  const { doc, dom, triggers, calls } = setup();
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  const bow = doc.querySelector('[data-id="bow"] .range-finder-btn');
+  const wish = doc.querySelector('[data-id="wish"] .range-finder-btn');
+  assert.equal(bow.getAttribute('tabindex'), '0');
+  assert.equal(bow.hasAttribute('aria-disabled'), false);
+  assert.equal(wish.getAttribute('aria-disabled'), 'true');
+  const enter = new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true });
+  bow.dispatchEvent(enter);
+  assert.equal(enter.defaultPrevented, true);
+  bow.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: ' ', shiftKey: true, bubbles: true }));
+  bow.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'a', bubbles: true }));
+  assert.deepEqual(calls.map(c => [c[0], c[1].share]), [['toggle', false], ['toggle', true]]);
+  wish.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  assert.equal(calls.length, 2);
+});
+
 test('no token on scene → notification, no pin (Review Focus 1)', () => {
   const { doc, dom, triggers, calls, notes } = setup({ token: null });
   triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');

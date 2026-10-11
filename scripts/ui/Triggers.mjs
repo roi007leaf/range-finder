@@ -43,15 +43,23 @@ export class Triggers {
     const button = this.doc.createElement('a');
     button.className = 'range-finder-btn';
     button.setAttribute('role', 'button');
+    button.setAttribute('tabindex', '0');
     const active = hasRange(spec);
-    if (!active) button.classList.add('is-disabled');
+    if (!active) {
+      button.classList.add('is-disabled');
+      button.setAttribute('aria-disabled', 'true');
+    }
     button.dataset.tooltip = active ? this.localize('RANGE_FINDER.Button.Show') : spec.note;
     button.setAttribute('aria-label', button.dataset.tooltip);
     button.innerHTML = '<i class="fa-solid fa-ruler-combined"></i>';
-    button.addEventListener('click', event => {
+    const activate = event => {
       event.preventDefault();
       event.stopPropagation();
       if (active) this.#toggle(row, event.shiftKey);
+    };
+    button.addEventListener('click', activate);
+    button.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') activate(event);
     });
     return button;
   }

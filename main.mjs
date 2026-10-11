@@ -92,6 +92,8 @@ function clearLocal() {
   return had;
 }
 
+const api = { registerAdapter, clear: clearLocal };
+
 /** Render hooks pass an HTMLElement (ApplicationV2) or a jQuery object (ApplicationV1). */
 function rootOf(html, app) {
   if (html instanceof HTMLElement) return html;
@@ -114,8 +116,7 @@ Hooks.once('init', () => {
     onDown: () => clearLocal(),
     precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY
   });
-  // Register adapters during init.
-  game.modules.get(MODULE_ID).api = { registerAdapter, clear: clearLocal };
+  game.modules.get(MODULE_ID).api = api;
   game.keybindings.register(MODULE_ID, 'clearShared', {
     name: 'RANGE_FINDER.Keys.ClearShared.Name', hint: 'RANGE_FINDER.Keys.ClearShared.Hint',
     editable: [], restricted: true,
@@ -124,6 +125,10 @@ Hooks.once('init', () => {
 });
 
 Hooks.once('setup', () => {
+  // Other modules register adapters here: Hooks.once('rangeFinder.registerAdapters', api => api.registerAdapter(...)).
+  try {
+    Hooks.callAll('rangeFinder.registerAdapters', api);
+  } catch (error) { report(error); }
   adapter = getAdapter(game.system.id);
   for (const hook of new Set((adapter.rows ?? []).flatMap(row => row.hooks ?? []))) {
     Hooks.on(hook, (app, html) => {
@@ -188,6 +193,8 @@ Hooks.on('destroyToken', token => {
   }
 });
 Hooks.on('deleteToken', document => pins?.dropToken(document.id));
+// A sharer who disconnects (closed tab, crash) can't send unpin; drop their shared pins here.
+Hooks.on('userConnected', (user, connected) => { if (!connected) pins?.dropUser(user.id); });
 Hooks.on('deleteItem', item => pins?.dropItem(item.uuid));
 for (const hook of ['updateItem', 'updateActor', 'createItem']) Hooks.on(hook, () => pins?.size && pins.rebuild());
 for (const hook of ['createWall', 'updateWall', 'deleteWall', 'createToken', 'updateToken', 'canvasPan', 'controlToken', 'updateCombat', 'deleteCombat']) {

@@ -33,7 +33,17 @@ export class PinManager {
     const key = PinManager.key(this.userId, tokenId);
     const request = { tokenId, itemUuid, actionIndex };
     const existing = this.#pins.get(key);
-    if (existing && same(existing, request)) { this.#remove(key); return 'unpinned'; }
+    if (existing && same(existing, request)) {
+      // Shift+click on an unshared pin upgrades it to shared instead of unpinning.
+      if (share && !existing.shared && this.allowShare()) {
+        existing.shared = true;
+        this.broadcast({ action: 'pin', userId: this.userId, ...request });
+        this.onChange();
+        return 'shared';
+      }
+      this.#remove(key);
+      return 'unpinned';
+    }
     const spec = this.#spec(request);
     if (!spec) return 'unavailable';
     if (existing) this.#remove(key, false);
@@ -129,6 +139,8 @@ export class PinManager {
 
   dropToken(tokenId) { this.#dropWhere(pin => pin.tokenId === tokenId); }
   dropItem(itemUuid) { this.#dropWhere(pin => pin.itemUuid === itemUuid); }
+  /** A user disconnected: their shared pins can no longer be unpinned by them. */
+  dropUser(userId) { this.#dropWhere(pin => pin.userId === userId); }
 
   rebuild() {
     let changed = false;
@@ -145,9 +157,12 @@ export class PinManager {
     if (changed) this.onChange();
   }
 
-  /** Scene teardown: drop everything locally, broadcast nothing. */
+  /** Scene teardown: drop everything locally; only this user's shared pins are unpinned for everyone else. */
   reset() {
-    for (const pin of this.all()) this.ghost?.release(pin.sourceEl, { sticky: !pin.preview });
+    for (const pin of this.all()) {
+      this.ghost?.release(pin.sourceEl, { sticky: !pin.preview });
+      if (pin.shared && pin.userId === this.userId) this.broadcast({ action: 'unpin', userId: this.userId, tokenId: pin.tokenId });
+    }
     this.#pins.clear();
     this.#preview = null;
     this.onChange();
