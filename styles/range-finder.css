@@ -13,3 +13,15 @@
 @media (prefers-reduced-motion: reduce) {
   .range-finder-btn, .range-finder-ghostable { transition: none; }
 }
+/* pf2e-hud persistent shortcut tiles have no controls area: pin the button to the tile's top-right corner.
+   The tile styles every child absolute with pointer-events: none, so re-enable pointer events. */
+.item.shortcut { position: relative; }
+.item.shortcut > .range-finder-btn,
+#pf2e-hud-persistent .item.shortcut > .range-finder-btn {
+  position: absolute; top: 2px; right: 2px; margin: 0; width: 1.4em; height: 1.4em; font-size: .75em;
+  background: rgb(0 0 0 / 60%); color: #e6edf3; pointer-events: auto; z-index: 2;
+}
+.item.shortcut > .range-finder-btn:hover,
+#pf2e-hud-persistent .item.shortcut > .range-finder-btn:hover,
+.item.shortcut > .range-finder-btn.is-active,
+#pf2e-hud-persistent .item.shortcut > .range-finder-btn.is-active { color: #2ec4b6; background: rgb(0 0 0 / 80%); }
