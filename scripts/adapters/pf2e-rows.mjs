@@ -9,6 +9,8 @@ function strikeAt(actor, index, itemId) {
 }
 
 const hudActor = app => app?.actor ?? app?.parent?.actor ?? null;
+// Scroll, wand and staff spells live in their entry's collection, not in actor.items.
+const spellOf = (actor, entryId, id) => (entryId && id ? actor?.spellcasting?.collections?.get(entryId)?.get(id) : null) ?? itemOf(actor, id);
 // Sheet rows: prefer the row's controls strip, else its name heading.
 const controlsHost = el => el.querySelector(':scope .item-controls, :scope .controls') ?? el.querySelector(':scope .item-name, :scope .name, :scope h4') ?? el;
 // pf2e-hud sidebar rows: their `.controls` are ammo/variant strips, so use the name line.
@@ -51,7 +53,7 @@ export const pf2eRows = [
   {
     hooks: ['renderSpellsSidebarPF2eHUD'],
     selector: '.item[data-item-type="spell"][data-item-id]',
-    resolve: (el, app) => ({ actor: hudActor(app), item: itemOf(hudActor(app), el.dataset.itemId), actionIndex: null }),
+    resolve: (el, app) => ({ actor: hudActor(app), item: spellOf(hudActor(app), el.dataset.entryId, el.dataset.itemId), actionIndex: null }),
     host: nameHost
   },
   {

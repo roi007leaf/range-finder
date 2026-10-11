@@ -35,7 +35,11 @@ function appForElement(el) {
 function build({ tokenId, itemUuid, actionIndex }) {
   try {
     const token = canvas.tokens?.get(tokenId);
-    const item = itemUuid ? fromUuidSync(itemUuid) : null;
+    let item = null;
+    if (itemUuid) {
+      try { item = fromUuidSync(itemUuid); } catch { item = null; }
+      item ??= adapter.resolveItem?.(token?.actor, itemUuid) ?? null;
+    }
     if (!token?.actor || (!item && actionIndex == null)) return null;
     return adapter.specFor({ actor: token.actor, token, item, actionIndex });
   } catch (error) {

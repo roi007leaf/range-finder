@@ -134,3 +134,24 @@ test('adapter object', () => {
   assert.equal(pf2eAdapter.specFor, specFor);
   assert.ok(Array.isArray(pf2eAdapter.rows));
 });
+
+test('resolveItem finds scroll/wand/staff spells in spellcasting collections', async () => {
+  const { resolveItem } = await import('../scripts/adapters/pf2e.mjs');
+  const haste = { uuid: 'Actor.a.Item.haste', name: 'Haste' };
+  const caster = { spellcasting: { collections: new Map([['scroll-entry', new Map([['haste', haste]])]]) } };
+  assert.equal(resolveItem(caster, 'Actor.a.Item.haste'), haste);
+  assert.equal(resolveItem(caster, 'Actor.a.Item.nope'), null);
+  assert.equal(resolveItem({}, 'Actor.a.Item.haste'), null);
+});
+
+test('pf2e-hud spell rows resolve consumable spells through their entry', async () => {
+  const { pf2eRows } = await import('../scripts/adapters/pf2e-rows.mjs');
+  const row = pf2eRows.find(r => r.hooks.includes('renderSpellsSidebarPF2eHUD'));
+  const slow = { uuid: 'Actor.a.Item.slow', name: 'Slow' };
+  const hudActor = { items: new Map(), spellcasting: { collections: new Map([['wand-entry', new Map([['slow', slow]])]]) } };
+  const el = { dataset: { entryId: 'wand-entry', itemId: 'slow' } };
+  assert.equal(row.resolve(el, { actor: hudActor }).item, slow);
+  const owned = { uuid: 'Actor.a.Item.arc' };
+  hudActor.items.set('arc', owned);
+  assert.equal(row.resolve({ dataset: { entryId: 'missing', itemId: 'arc' } }, { actor: hudActor }).item, owned);
+});

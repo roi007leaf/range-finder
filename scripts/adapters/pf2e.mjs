@@ -89,4 +89,12 @@ export function distance(source, target, spec) {
   return source.distanceTo(target, options);
 }
 
-export const pf2eAdapter = { id: 'pf2e', specFor, cellMeasure, distance, rows: pf2eRows };
+/** Spells cast from scrolls, wands and staves aren't actor items, so their uuids don't resolve: find them in the spellcasting collections. */
+export function resolveItem(actor, uuid) {
+  for (const collection of actor?.spellcasting?.collections?.values?.() ?? []) {
+    for (const spell of collection?.values?.() ?? []) if (spell?.uuid === uuid) return spell;
+  }
+  return null;
+}
+
+export const pf2eAdapter = { id: 'pf2e', specFor, cellMeasure, distance, resolveItem, rows: pf2eRows };
