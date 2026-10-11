@@ -18,4 +18,14 @@ Setup: square-grid scene, a PF2e character with longbow, dagger, whip, a fist (b
 - [ ] Hex scene and gridless scene: rings with labels.
 - [ ] Open a sheet from the sidebar for an actor without a token on the scene: clicking 📏 warns, nothing breaks.
 - [ ] Change scene with a pin active: no errors, windows restored.
+- [ ] Badge on a target with another token directly north of it (touching): the badge is fully visible, not cut by the neighbour.
+- [ ] Sharer switches scene, reloads, or closes the tab: the other client's copy of the shared range clears.
+- [ ] Preview fade-in is visible on Alt press (and absent with OS reduced motion on).
+- [ ] Elevated token (e.g. 30 ft) with dim behind walls on: hatching and eye-slash match what the token sees from its elevation/level.
+- [ ] Pin a strike, then add a new weapon to the character: the pin keeps showing the originally pinned weapon.
+- [ ] Esc with no pins still closes the top window (Foundry's default).
+- [ ] Large token with a pinned longbow: dragging stays smooth.
+- [ ] NPC sheet strikes and character-sheet inventory weapons show 📏 and pin.
+- [ ] Minimize mode from a pf2e-hud sidebar (frameless): note whether it minimizes; if it can't, it stays as-is and is restored cleanly — record the result in the README.
+- [ ] Tab to a 📏 button and press Enter/Space: pins (Shift+Enter shares).
 - [ ] Console has no `Range Finder |` errors throughout.
