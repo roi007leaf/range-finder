@@ -22,6 +22,12 @@ test('generic: no range → none', () => {
   assert.ok(Number.isNaN(genericAdapter.distance({}, {})));
 });
 
+test('generic cellMeasure ignores bands (measured once per cell)', () => {
+  const measure = genericAdapter.cellMeasure(null, 5);
+  assert.equal(measure.bandSensitive({ tone: 'reach', max: 10 }), false);
+  assert.equal(measure({ i: 0, j: 0 }, { i: 2, j: 2 }), 15);
+});
+
 test('registry', () => {
   assert.equal(getAdapter('pf2e'), pf2eAdapter);
   assert.equal(getAdapter('sf2e'), pf2eAdapter);

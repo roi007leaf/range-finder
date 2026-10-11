@@ -72,6 +72,24 @@ test('actionIndex resolves the strike item', () => {
   assert.equal(specFor({ actor, item: null, actionIndex: 0 }).kind, 'increments');
 });
 
+test('pinned strike keeps its weapon when the actions list reorders (final 5)', () => {
+  const bow = { ...longbow, id: 'bow' }, sword = { ...whip, id: 'whip' }, knife = { ...dagger, id: 'knife' };
+  const before = { ...actor, system: { ...actor.system, actions: [{ item: bow }, { item: sword }] } };
+  assert.equal(specFor({ actor: before, item: sword, actionIndex: 1 }).itemName, 'Whip');
+  // A new weapon was added ahead of the pinned one: index 1 now points at the dagger.
+  const after = { ...actor, system: { ...actor.system, actions: [{ item: bow }, { item: knife }, { item: sword }] } };
+  assert.equal(specFor({ actor: after, item: sword, actionIndex: 1 }).itemName, 'Whip');
+  // Same item at the index: the action's (prepared) item is used.
+  const prepared = { ...sword, name: 'Whip (prepared)' };
+  const same = { ...actor, system: { ...actor.system, actions: [{ item: bow }, { item: prepared }] } };
+  assert.equal(specFor({ actor: same, item: sword, actionIndex: 1 }).itemName, 'Whip (prepared)');
+  // The weapon has no strike any more: fall back to the item itself.
+  const gone = { ...actor, system: { ...actor.system, actions: [{ item: bow }] } };
+  assert.equal(specFor({ actor: gone, item: sword, actionIndex: 1 }).itemName, 'Whip');
+  // Synthetic strike (no item): the index decides.
+  assert.equal(specFor({ actor: after, item: null, actionIndex: 1 }).itemName, 'Dagger');
+});
+
 test('spells', () => {
   assert.deepEqual(specFor({ actor, item: spell('Shocking Grasp', 'touch') }).bands, [{ min: 0, max: 5, penalty: 0, tone: 'reach', label: 'Touch · 5 ft' }]);
   assert.deepEqual(specFor({ actor, item: spell('Electric Arc', '30 feet') }).bands, [{ min: 0, max: 30, penalty: 0, tone: 'base', label: '30 ft' }]);

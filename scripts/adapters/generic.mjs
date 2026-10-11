@@ -14,7 +14,7 @@ function specFor({ item }) {
   return makeSpec({ kind: long > value ? 'increments' : 'radius', bands, itemName: name });
 }
 
-const cellMeasure = (_spec, unit = 5) => (from, to) => alternatingDistance(from, to, unit);
+const cellMeasure = (_spec, unit = 5) => Object.assign((from, to) => alternatingDistance(from, to, unit), { bandSensitive: () => false });
 
 function distance(source, target) {
   const grid = globalThis.canvas?.grid;

@@ -51,20 +51,36 @@ function spellSpec(actor, spell) {
   return noneSpec(raw ? `Range: ${raw}` : null, name);
 }
 
+/**
+ * The strike's item. The index alone identifies synthetic strikes (no item); for a real item the index
+ * may be stale (actions reorder when weapons are added), so the item's own strike wins.
+ */
+function strikeItem(actor, actionIndex, item) {
+  const actions = actor?.system?.actions ?? [];
+  const atIndex = actions[actionIndex]?.item ?? null;
+  if (!item) return atIndex;
+  if (atIndex && atIndex.id === item.id) return atIndex;
+  return actions.find(action => action?.item && action.item.id === item.id)?.item ?? item;
+}
+
 export function specFor({ actor, item, actionIndex = null }) {
-  if (actionIndex !== null && actionIndex !== undefined) item = actor?.system?.actions?.[actionIndex]?.item ?? item;
+  if (actionIndex !== null && actionIndex !== undefined) item = strikeItem(actor, actionIndex, item);
   if (!item) return noneSpec();
   if (item.type === 'spell') return spellSpec(actor, item);
   if (item.type === 'weapon' || item.type === 'melee') return weaponSpec(actor, item);
   return noneSpec(null, item.name ?? '');
 }
 
+const isReach10 = band => band?.tone === 'reach' && band.max === 10;
+
 /** PF2e: alternating diagonals; reach exactly 10 also covers the 15 ft double diagonal. */
 export function cellMeasure(_spec, unit = 5) {
-  return (from, to, band) => {
-    if (band?.tone === 'reach' && band.max === 10 && Math.abs(from.i - to.i) === 2 && Math.abs(from.j - to.j) === 2) return 10;
+  const measure = (from, to, band) => {
+    if (isReach10(band) && Math.abs(from.i - to.i) === 2 && Math.abs(from.j - to.j) === 2) return 10;
     return alternatingDistance(from, to, unit);
   };
+  measure.bandSensitive = isReach10;
+  return measure;
 }
 
 export function distance(source, target, spec) {

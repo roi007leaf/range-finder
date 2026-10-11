@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { alternatingDistance, bandCells, cellKey, chebyshevDistance } from '../scripts/core/cells.mjs';
 import { incrementBands, singleBand } from '../scripts/core/spec.mjs';
+import { cellMeasure } from '../scripts/adapters/pf2e.mjs';
 
 const plain = (a, b) => alternatingDistance(a, b, 5);
 
@@ -41,6 +42,25 @@ test('per-band measure override (PF2e reach 10 diagonal)', () => {
   const band = singleBand(10, 'reach', 'Reach 10 ft');
   assert.equal(bandCells({ originCells: [{ i: 5, j: 5 }], bands: band, measure: reach10 })[0].length, 24);
   assert.equal(bandCells({ originCells: [{ i: 5, j: 5 }], bands: singleBand(10), measure: reach10 })[0].length, 20);
+});
+
+test('band-sensitive measure: reach 10 still counts 24 cells (final 11)', () => {
+  const measure = cellMeasure(null, 5);
+  assert.equal(typeof measure.bandSensitive, 'function');
+  assert.equal(bandCells({ originCells: [{ i: 5, j: 5 }], bands: singleBand(10, 'reach', 'Reach 10 ft'), measure })[0].length, 24);
+  assert.equal(bandCells({ originCells: [{ i: 5, j: 5 }], bands: singleBand(10), measure })[0].length, 20);
+});
+
+test('band-insensitive measure is called once per origin per cell, not per band (final 11)', () => {
+  const pf2e = cellMeasure(null, 5);
+  let calls = 0;
+  const measure = Object.assign((a, b, band) => { calls++; return pf2e(a, b, band); }, { bandSensitive: pf2e.bandSensitive });
+  const origin = [{ i: 20, j: 20 }, { i: 20, j: 21 }];
+  const groups = bandCells({ originCells: origin, bands: incrementBands(10, 60), measure });
+  const legacy = bandCells({ originCells: origin, bands: incrementBands(10, 60), measure: plain });
+  assert.deepEqual(groups.map(g => g.length), legacy.map(g => g.length));
+  const scanned = (2 * 12 + 1) * (2 * 12 + 2) - origin.length;
+  assert.equal(calls, scanned * origin.length);
 });
 
 test('empty origin or bands', () => {

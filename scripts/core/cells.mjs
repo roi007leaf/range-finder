@@ -13,6 +13,11 @@ export function chebyshevDistance(a, b, unit = 5) {
   return unit * Math.max(Math.abs(a.i - b.i), Math.abs(a.j - b.j));
 }
 
+/**
+ * Group the cells around `originCells` by the first band they fall in.
+ * `measure(from, to, band)` may carry a `bandSensitive(band)` predicate: then each cell is measured once
+ * (band-independent, `measure(from, to)`) and re-measured only for bands the predicate flags.
+ */
 export function bandCells({ originCells, bands, measure, unit = 5, bounds = null }) {
   const groups = bands.map(() => []);
   if (!originCells?.length || !bands.length) return groups;
@@ -28,13 +33,19 @@ export function bandCells({ originCells, bands, measure, unit = 5, bounds = null
     i1 = Math.min(i1, bounds.rows - 1); j1 = Math.min(j1, bounds.cols - 1);
   }
   const occupied = new Set(originCells.map(cellKey));
+  const nearest = (cell, band) => {
+    let distance = Infinity;
+    for (const origin of originCells) distance = Math.min(distance, measure(origin, cell, band));
+    return distance;
+  };
+  const sensitive = typeof measure.bandSensitive === 'function' ? bands.map(band => Boolean(measure.bandSensitive(band))) : null;
   for (let i = i0; i <= i1; i++) {
     for (let j = j0; j <= j1; j++) {
       if (occupied.has(`${i},${j}`)) continue;
       const cell = { i, j };
+      const base = sensitive ? nearest(cell) : null;
       for (let b = 0; b < bands.length; b++) {
-        let distance = Infinity;
-        for (const origin of originCells) distance = Math.min(distance, measure(origin, cell, bands[b]));
+        const distance = sensitive && !sensitive[b] ? base : nearest(cell, bands[b]);
         if (inBand(bands[b], distance)) { groups[b].push(cell); break; }
       }
     }

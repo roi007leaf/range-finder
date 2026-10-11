@@ -16,6 +16,7 @@ export function classifyTargets({ spec, targets }) {
 }
 
 export function badgeText({ distance, penalty, outOfRange }) {
+  if (!Number.isFinite(distance)) return '— ft · ✗';
   const mark = outOfRange ? '✗' : penalty ? fmtPenalty(penalty) : '✓';
   return `${Math.round(distance)} ft · ${mark}`;
 }

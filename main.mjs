@@ -77,7 +77,9 @@ function setupCanvas() {
   try {
     overlay?.destroy();
     badges?.destroy();
-    overlay = new RangeOverlay({ parent: canvas.interface.grid, makeText, settings: readSettings });
+    // Fills/outlines under the tokens in the grid layer; labels and badges in canvas.interface at zIndex 1000
+    // (interface is a sortable CanvasGroup) so neighbouring tokens' erase-blended void meshes can't cut them.
+    overlay = new RangeOverlay({ parent: canvas.interface.grid, labelParent: canvas.interface, makeText, settings: readSettings });
     badges = new TargetBadges({ parent: canvas.interface, makeText, settings: readSettings });
     schedule();
   } catch (error) { report(error); }

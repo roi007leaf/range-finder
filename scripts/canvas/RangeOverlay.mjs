@@ -4,48 +4,74 @@ import { outline, rowRuns, topRightPoint } from '../core/outline.mjs';
 import { bandStyle } from '../core/theme.mjs';
 
 const FADE_MS = 150;
+/** Above the token layer (zIndex 200) so neighbouring tokens' erase-blended void meshes don't cut the labels. */
+export const LABEL_Z_INDEX = 1000;
 const reducedMotion = () => Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
+const defaultFrame = () => (typeof globalThis.requestAnimationFrame === 'function' ? fn => globalThis.requestAnimationFrame(fn) : null);
 
 export class RangeOverlay {
-  #seen = new Set();
+  /** Fade start time per pin key; survives the per-draw layer rebuild. */
+  #fades = new Map();
+  /** Current draw's layers per pin key: [fill layer, label layer]. */
+  #layers = new Map();
+  #frame = null;
   #cache = new Map();
 
-  constructor({ parent, PIXI = globalThis.PIXI, makeText, settings }) {
-    Object.assign(this, { PIXI, makeText, settings });
+  constructor({ parent, labelParent = parent, PIXI = globalThis.PIXI, makeText, settings, now = () => performance.now(), requestFrame = defaultFrame() }) {
+    Object.assign(this, { PIXI, makeText, settings, now, requestFrame });
     this.container = new PIXI.Container();
     this.container.eventMode = 'none';
     parent.addChild(this.container);
+    this.labels = new PIXI.Container();
+    this.labels.eventMode = 'none';
+    this.labels.zIndex = LABEL_Z_INDEX;
+    labelParent.addChild(this.labels);
   }
 
-  destroy() { this.container.destroy({ children: true }); this.#cache.clear(); }
+  destroy() {
+    this.container.destroy({ children: true });
+    this.labels.destroy({ children: true });
+    this.#cache.clear();
+    this.#fades.clear();
+    this.#layers.clear();
+  }
 
   draw(entries, geo) {
     for (const child of this.container.removeChildren()) child.destroy({ children: true });
+    for (const child of this.labels.removeChildren()) child.destroy({ children: true });
     const settings = this.settings();
-    const seen = new Set(), used = new Set();
+    const time = this.now();
+    const layers = new Map(), used = new Set();
     for (const entry of entries) {
-      const layer = new this.PIXI.Container();
-      this.#drawPin(layer, entry, geo, settings, used);
+      const layer = new this.PIXI.Container(), labelLayer = new this.PIXI.Container();
+      this.#drawPin(layer, labelLayer, entry, geo, settings, used);
       this.container.addChild(layer);
+      this.labels.addChild(labelLayer);
       const key = `${entry.pin.key}|${entry.pin.itemUuid}|${entry.pin.actionIndex}|${entry.pin.preview}`;
-      seen.add(key);
-      if (!this.#seen.has(key)) this.#fadeIn(layer);
+      if (!this.#fades.has(key)) this.#fades.set(key, time);
+      layers.set(key, [...(layers.get(key) ?? []), layer, labelLayer]);
     }
-    this.#seen = seen;
+    for (const key of this.#fades.keys()) if (!layers.has(key)) this.#fades.delete(key);
+    this.#layers = layers;
+    this.#applyFades(time);
     for (const key of this.#cache.keys()) if (!used.has(key)) this.#cache.delete(key);
   }
 
-  #fadeIn(layer) {
-    if (reducedMotion() || typeof globalThis.requestAnimationFrame !== 'function') return;
-    const start = performance.now();
-    layer.alpha = 0;
-    const step = now => {
-      if (layer.destroyed) return;
-      const t = Math.min(1, (now - start) / FADE_MS);
-      layer.alpha = t;
-      if (t < 1) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+  /** Alpha from each key's fade start; one frame loop runs while any fade is unfinished. */
+  #applyFades(time) {
+    const reduced = reducedMotion();
+    let pending = false;
+    for (const [key, group] of this.#layers) {
+      const alpha = reduced ? 1 : Math.min(1, Math.max(0, (time - this.#fades.get(key)) / FADE_MS));
+      if (alpha < 1) pending = true;
+      for (const layer of group) layer.alpha = alpha;
+    }
+    if (!pending || this.#frame !== null || !this.requestFrame) return;
+    this.#frame = this.requestFrame(() => {
+      this.#frame = null;
+      if (this.container.destroyed) return;
+      this.#applyFades(this.now());
+    });
   }
 
   /** Cells and outlines per band, cached by spec object + origin cells + grid size. */
@@ -56,6 +82,7 @@ export class RangeOverlay {
     if (!bySpec) { bySpec = new Map(); this.#cache.set(spec, bySpec); }
     if (!bySpec.has(key)) {
       const measure = adapter.cellMeasure(spec, geo.unit);
+      // measure.bandSensitive (optional) lets bandCells measure once per cell and re-measure only where a band needs it.
       const groups = bandCells({ originCells: origin, bands, measure, unit: geo.unit, bounds: geo.bounds });
       bySpec.set(key, groups.map(cells => ({ cells, loops: outline(cells), runs: rowRuns(cells) })));
       for (const old of [...bySpec.keys()]) if (old !== key && old.startsWith(`${which}|`)) bySpec.delete(old);
@@ -63,13 +90,13 @@ export class RangeOverlay {
     return bySpec.get(key);
   }
 
-  #drawPin(layer, { pin, token, adapter, tint, ownerName }, geo, settings, used) {
+  #drawPin(layer, labelLayer, { pin, token, adapter, tint, ownerName }, geo, settings, used) {
     const g = new this.PIXI.Graphics();
     layer.addChild(g);
     const { spec } = pin;
     const style = (band, index) => bandStyle({ tone: band.tone, index, palette: settings.palette, opacity: settings.bandOpacity, preview: pin.preview, tint });
-    if (ownerName) this.#ownerLabel(layer, `${ownerName} — ${spec.itemName}`, token, geo, style(spec.bands[0], 0));
-    if (!geo.isSquare) return this.#drawRings(layer, g, spec, token, geo, settings, style);
+    if (ownerName) this.#ownerLabel(labelLayer, `${ownerName} — ${spec.itemName}`, token, geo, style(spec.bands[0], 0));
+    if (!geo.isSquare) return this.#drawRings(labelLayer, g, spec, token, geo, settings, style);
     const origin = geo.originCells(token);
     const blocked = settings.dimBehindWalls ? geo.losFor(token).cell : null;
     const paint = (bands, which) => {
@@ -81,8 +108,8 @@ export class RangeOverlay {
         const s = style(band, overlay ? 0 : index);
         if (!overlay && settings.bandStyle !== 'outline') {
           if (blocked) {
-            const open = cells.filter(cell => !blocked(cell));
-            const shut = cells.filter(cell => blocked(cell));
+            const open = [], shut = [];
+            for (const cell of cells) (blocked(cell) ? shut : open).push(cell);
             this.#fill(g, rowRuns(open), s.fill, s.fillAlpha, geo);
             this.#fill(g, rowRuns(shut), s.fill, s.fillAlpha * 0.4, geo);
             this.#hatch(g, shut, s.line, 0.5, geo);
@@ -92,7 +119,7 @@ export class RangeOverlay {
         }
         if (overlay && band.tone === 'penalty-zone') this.#hatch(g, cells, s.fill, 0.45, geo);
         if (overlay || settings.bandStyle !== 'fill') this.#stroke(g, loops, s, geo);
-        if (settings.showLabels) this.#label(layer, band.label, topRightPoint(loops), s, geo);
+        if (settings.showLabels) this.#label(labelLayer, band.label, topRightPoint(loops), s, geo);
       });
     };
     paint(spec.bands, 'bands');

@@ -1,13 +1,19 @@
 /** Distance/penalty plates above target tokens. */
 import { badgeText, classifyTargets } from '../core/targets.mjs';
 import { bandStyle } from '../core/theme.mjs';
-import { FA_FAMILY } from './geometry.mjs';
+import { faFamily } from './geometry.mjs';
+import { LABEL_Z_INDEX } from './RangeOverlay.mjs';
+
+/** Font Awesome `eye-slash`. */
+const EYE_SLASH = '\uf070';
 
 export class TargetBadges {
   constructor({ parent, PIXI = globalThis.PIXI, makeText, settings }) {
     Object.assign(this, { PIXI, makeText, settings });
     this.container = new PIXI.Container();
     this.container.eventMode = 'none';
+    // canvas.interface sorts by zIndex; stay above the token layer (200) so tokens' void meshes can't erase badges.
+    this.container.zIndex = LABEL_Z_INDEX;
     parent.addChild(this.container);
   }
 
@@ -46,7 +52,7 @@ export class TargetBadges {
     const plate = new this.PIXI.Container();
     const pad = 5;
     const parts = [];
-    if (result.blocked) parts.push(this.makeText('', { fontFamily: FA_FAMILY, fontWeight: '900', fontSize: 13, fill: s.text }));
+    if (result.blocked) parts.push(this.makeText(EYE_SLASH, { fontFamily: faFamily(), fontWeight: '900', fontSize: 13, fill: s.text }));
     parts.push(this.makeText(badgeText(result), { fontSize: 14, fill: s.text }));
     let x = pad;
     const height = Math.max(...parts.map(part => part.height));
@@ -60,7 +66,9 @@ export class TargetBadges {
     const scale = Math.min(2, Math.max(0.6, 1 / (zoom || 1))) * settings.badgeScale;
     plate.scale.set(scale);
     const width = (x - 4 + pad) * scale, plateHeight = (height + pad) * scale;
-    plate.position.set(target.center.x - width / 2, target.y - (plateHeight + 4) * (level + 1));
+    // x and y both from the rendered center so the plate doesn't drift while the token animates.
+    const top = target.center.y - target.h / 2;
+    plate.position.set(target.center.x - width / 2, top - (plateHeight + 4) * (level + 1));
     return plate;
   }
 }

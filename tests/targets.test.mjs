@@ -25,3 +25,8 @@ test('badgeText marks', () => {
   assert.equal(badgeText({ distance: 45, penalty: -2, outOfRange: false }), '45 ft · –2');
   assert.equal(badgeText({ distance: 200.4, penalty: null, outOfRange: true }), '200 ft · ✗');
 });
+
+test('badgeText: non-finite distance renders a dash (final 10)', () => {
+  assert.equal(badgeText({ distance: NaN, penalty: null, outOfRange: true }), '— ft · ✗');
+  assert.equal(badgeText({ distance: Infinity, penalty: 0, outOfRange: false }), '— ft · ✗');
+});
