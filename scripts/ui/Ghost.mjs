@@ -6,11 +6,10 @@ const log = (...args) => console.error('Range Finder |', ...args);
 
 export class Ghost {
   #held = new Map();
-  #listening = false;
+  #revealed = false;
 
   constructor({ mode = () => 'fade', doc = globalThis.document, appFor = () => null } = {}) {
     Object.assign(this, { mode, doc, appFor });
-    this.onMove = this.onMove.bind(this);
   }
 
   /** `el` may be one element or a list (e.g. a HUD sidebar together with its bar). */
@@ -30,13 +29,12 @@ export class Ghost {
           el.classList.add(GHOSTABLE_CLASS, GHOST_CLASS);
         }
         this.#held.set(el, entry);
-      } else if (!sticky && entry.mode === 'fade') {
-        // A preview always ghosts the window, even if hover had restored a pinned one.
-        el.classList.add(GHOST_CLASS);
       }
       if (sticky) entry.pins++;
       else entry.previews++;
-      this.#listen();
+      // Any new hold fades every held window again.
+      this.#revealed = false;
+      this.#setFaded(true);
     } catch (error) {
       log(error);
     }
@@ -51,30 +49,36 @@ export class Ghost {
     if (entry.pins + entry.previews > 0) return;
     this.#restore(el, entry);
     this.#held.delete(el);
-    if (!this.#held.size) this.#unlisten();
+    if (!this.#held.size) this.#revealed = false;
   }
 
   releaseAll() {
     for (const [el, entry] of this.#held) this.#restore(el, entry);
     this.#held.clear();
-    this.#unlisten();
+    this.#revealed = false;
   }
 
   isGhosted(el) { return this.#held.has(el); }
 
-  onMove(event) {
+  get revealed() { return this.#revealed; }
+
+  /** Show/hide the faded windows while holds persist. Returns whether anything is held. */
+  toggleRevealed() {
+    if (!this.#held.size) return false;
+    this.#revealed = !this.#revealed;
+    this.#setFaded(!this.#revealed);
+    return true;
+  }
+
+  #setFaded(faded) {
     for (const [el, entry] of this.#held) {
+      if (entry.mode !== 'fade') continue;
       try {
-        if (!el.isConnected) { this.#held.delete(el); continue; }
-        if (entry.mode !== 'fade' || entry.previews > 0) continue;
-        const rect = el.getBoundingClientRect();
-        const inside = event.clientX >= rect.left && event.clientX <= rect.right && event.clientY >= rect.top && event.clientY <= rect.bottom;
-        el.classList.toggle(GHOST_CLASS, !inside);
+        el.classList.toggle(GHOST_CLASS, faded);
       } catch (error) {
         log(error);
       }
     }
-    if (!this.#held.size) this.#unlisten();
   }
 
   #call(app, method) {
@@ -94,17 +98,5 @@ export class Ghost {
       log(error);
     }
     if (entry.app) this.#call(entry.app, 'maximize');
-  }
-
-  #listen() {
-    if (this.#listening || !this.doc) return;
-    this.doc.addEventListener('pointermove', this.onMove, { passive: true });
-    this.#listening = true;
-  }
-
-  #unlisten() {
-    if (!this.#listening) return;
-    this.doc.removeEventListener('pointermove', this.onMove);
-    this.#listening = false;
   }
 }

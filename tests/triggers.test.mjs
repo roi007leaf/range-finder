@@ -214,10 +214,11 @@ test('whole-row controls via addRows: the row is the button and carries the acti
   assert.ok(bow.classList.contains('is-active'));
 });
 
-test('ghosted windows keep the variant 📏 clickable (CSS rule present)', async () => {
+test('ghosted windows and their children are fully click-through (CSS rule present)', async () => {
   const { readFile } = await import('node:fs/promises');
   const css = await readFile(new URL('../styles/range-finder.css', import.meta.url), 'utf8');
-  assert.match(css, /\.range-finder-ghost \.range-finder-btn\[data-range-finder-alt\]\s*\{\s*pointer-events:\s*auto\s*!important;/);
+  assert.match(css, /\.range-finder-ghost,\s*\.range-finder-ghost \*\s*\{\s*pointer-events:\s*none\s*!important;/);
+  assert.doesNotMatch(css, /data-range-finder-alt\]\s*\{\s*pointer-events:\s*auto/);
 });
 
 test('Alt+pointerdown on a variant 📏 mid-preview ends the preview, then the click pins the variant', () => {
