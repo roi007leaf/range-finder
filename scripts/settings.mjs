@@ -18,7 +18,10 @@ export const SETTINGS = {
 };
 
 // Foundry localizes setting names, hints and choices itself, so the default localize is the identity.
-export function registerSettings(onChange, settings = game.settings, localize = key => key) {
+const BUILT_IN_SYSTEMS = new Set(['pf2e', 'sf2e', 'dnd5e']);
+
+// The range field is only for systems without a built-in adapter, so it's hidden for the rest.
+export function registerSettings(onChange, settings = game.settings, localize = key => key, systemId = null) {
   for (const [key, data] of Object.entries(SETTINGS)) {
     const localized = data.choices
       ? { ...data, choices: Object.fromEntries(Object.entries(data.choices).map(([value, label]) => [value, localize(label)])) }
@@ -26,7 +29,7 @@ export function registerSettings(onChange, settings = game.settings, localize = 
     settings.register(MODULE_ID, key, {
       name: localize(`RANGE_FINDER.Settings.${key}.Name`),
       hint: localize(`RANGE_FINDER.Settings.${key}.Hint`),
-      config: true,
+      config: !(key === 'rangeField' && BUILT_IN_SYSTEMS.has(systemId)),
       ...localized,
       onChange
     });

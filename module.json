@@ -2,7 +2,7 @@
   "id": "range-finder",
   "title": "Range Finder",
   "description": "See an item's, attack's, spell's or skill action's range on the canvas: penalty bands, reach, and per-target distance badges. Built-in PF2e, SF2e and D&D 5e support; a Token HUD list and item-sheet button for every system.",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "authors": [{ "name": "RoiLeaf" }],
   "compatibility": { "minimum": "14", "verified": "14" },
   "esmodules": ["main.mjs"],

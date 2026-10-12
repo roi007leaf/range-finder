@@ -71,7 +71,7 @@ Reads `item.system.range = { value, long, reach, units }` (weapons) and `system.
 - Built with the same `Triggers` row machinery (rows registered with a resolver over the popover's `data-item-uuid` / `data-action-index`).
 
 ### Item sheet header button
-- `getHeaderControlsApplicationV2` (AppV2 item sheets) and `getItemSheetHeaderButtons` / `getApplicationHeaderButtons` (AppV1 sheets, e.g. PF2e item sheets): add a `📏` control for embedded items whose adapter spec has a range.
+- `getHeaderControlsDocumentSheetV2` (AppV2 document sheets, e.g. dnd5e's `ItemSheet5e`; filtered to embedded Items) and `getItemSheetHeaderButtons` (AppV1 item sheets, e.g. PF2e): add a `📏` control for embedded items whose adapter spec has a range.
 - Click pins the item for the owning actor's token (same token resolution as sheet rows; warning if none); Shift+click shares. The item sheet is ghosted like actor sheets.
 
 ## PF2e/SF2e skill actions and range modifiers

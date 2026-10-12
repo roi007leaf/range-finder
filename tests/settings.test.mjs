@@ -34,6 +34,15 @@ test('registers every setting with the spec defaults and scopes', () => {
   assert.deepEqual(settings.registered.get('bandOpacity').range, { min: 0.3, max: 1.5, step: 0.1 });
 });
 
+test('rangeField is hidden for systems with a built-in adapter, visible otherwise', () => {
+  for (const [systemId, config] of [['pf2e', false], ['sf2e', false], ['dnd5e', false], ['swade', true], [null, true]]) {
+    const settings = fakeSettings();
+    registerSettings(() => {}, settings, undefined, systemId);
+    assert.equal(settings.registered.get('rangeField').config, config, String(systemId));
+    assert.equal(settings.registered.get('tokenHudButton').config, true, String(systemId));
+  }
+});
+
 test('readSettings returns every key', () => {
   const settings = fakeSettings();
   registerSettings(() => {}, settings);

@@ -23,7 +23,7 @@ test('non-finite distance is out of range', () => {
 test('badgeText marks', () => {
   assert.equal(badgeText({ distance: 25, penalty: 0, outOfRange: false }), '25 ft · ✓');
   assert.equal(badgeText({ distance: 45, penalty: -2, outOfRange: false }), '45 ft · –2');
-  assert.equal(badgeText({ distance: 200.4, penalty: null, outOfRange: true }), '200 ft · ✗');
+  assert.equal(badgeText({ distance: 200.4, penalty: null, outOfRange: true }), '200.4 ft · ✗');
 });
 
 test('badgeText: non-finite distance renders a dash (final 10)', () => {
@@ -42,5 +42,12 @@ test('badgeText: band mark beats penalty and ✓; ✗ beats the mark; units', ()
 test('badgeText keeps one decimal on metric scenes (Review Focus 1)', () => {
   assert.equal(badgeText({ distance: 7.5, penalty: 0, outOfRange: false }, 'm'), '7.5 m · ✓');
   assert.equal(badgeText({ distance: 3.0000001, penalty: 0, outOfRange: false }, 'm'), '3 m · ✓');
-  assert.equal(badgeText({ distance: 200.4, penalty: null, outOfRange: true }, 'ft'), '200 ft · ✗');
+  assert.equal(badgeText({ distance: 200.4, penalty: null, outOfRange: true }, 'ft'), '200.4 ft · ✗');
+  assert.equal(badgeText({ distance: 30, penalty: 0, outOfRange: false }, 'ft'), '30 ft · ✓');
+});
+
+test('badgeText: one decimal whenever not whole, whatever the units string', () => {
+  assert.equal(badgeText({ distance: 7.5, penalty: 0, outOfRange: false }, 'meters'), '7.5 meters · ✓');
+  assert.equal(badgeText({ distance: 7.04, penalty: 0, outOfRange: false }, 'meters'), '7 meters · ✓');
+  assert.equal(badgeText({ distance: 12.5, penalty: 0, outOfRange: false }, 'squares'), '12.5 squares · ✓');
 });

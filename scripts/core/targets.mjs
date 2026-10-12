@@ -15,12 +15,11 @@ export function classifyTargets({ spec, targets }) {
   });
 }
 
-const METRIC = new Set(['m', 'km']);
-/** Feet round to whole numbers; metric scenes keep one decimal (1.5 m squares). */
-const fmtDistance = (distance, units) => (METRIC.has(units) ? Math.round(distance * 10) / 10 : Math.round(distance));
+/** Whole distances stay integers; anything else shows one decimal (1.5 m squares, odd grid distances). */
+const fmtDistance = distance => (Number.isInteger(Math.round(distance * 10) / 10) ? String(Math.round(distance)) : String(Math.round(distance * 10) / 10));
 
 export function badgeText({ distance, penalty, outOfRange, mark = null }, units = 'ft') {
   if (!Number.isFinite(distance)) return `— ${units} · ✗`;
   const sign = outOfRange ? '✗' : mark || (penalty ? fmtPenalty(penalty) : '✓');
-  return `${fmtDistance(distance, units)} ${units} · ${sign}`;
+  return `${fmtDistance(distance)} ${units} · ${sign}`;
 }

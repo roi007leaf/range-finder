@@ -38,6 +38,7 @@ Setup: square-grid scene, a PF2e character with longbow, dagger, whip, a fist (b
 - [ ] Character sheet Actions tab and pf2e-hud actions sidebar: 📏 on owned Battle Medicine, Terrifying Howl (`Emanation 30 ft`), You're Next (60 ft); none on Toughness.
 - [ ] Legendary Laugh owned → Demoralize 60 ft. Hydraulic Maneuvers: Shove 15 ft only while its toggle is on.
 - [ ] Whip equipped: Trip/Disarm at 10 ft, Grapple at 5 ft. Bola equipped: Trip shows reach + a `Ranged trip · –2` band to 20 ft.
+- [ ] Touch Focus owned: with its toggle on, touch spells reach 30 ft (per the table entry); with it off they stay at touch reach.
 - [ ] Reach-N weapon with the Lunge toggle on: strike and Trip reach +5; without the toggle unchanged. Whip + Lunge: the system's value (not +10).
 - [ ] Far Shot longbow: bands to 1200 ft (system value), not 2400.
 - [ ] Reach Spell owned: spell 📏 tooltip says "Alt+click: with Reach Spell"; point at 📏, hold Alt, click → `Reach Spell 60 ft` for Electric Arc, 30 ft for Shocking Grasp; no preview started while pointing at the 📏; plain click shows the normal range. Second client sees the shared variant.
