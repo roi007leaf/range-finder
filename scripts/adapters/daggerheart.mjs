@@ -4,14 +4,15 @@
  * The system measures bands against `canvas.scene.rangeSettings` (scene flag or the world's
  * variantRules.rangeMeasurement): `{ melee: 5, veryClose: 15, close: 30, far: 60 }` by default, compared
  * directly with grid-measured distances, so the values are already in scene units. Very Far has no upper
- * bound in the system (isWithinRange('veryFar') is always true); it is drawn out to 5× Far (300 ft by
- * default, the "100-300 feet" of the rules text). CONFIG.DH.GENERAL.range[*].distance (1/3/10/20/30) is
+ * bound in the system (isWithinRange('veryFar') is always true): badges treat it as unbounded, and it is drawn
+ * out to 5× Far (300 ft by default, the "100-300 feet" of the rules text). Distances follow isWithinRange too
+ * (straight-line, rounded to the grid; see distance). CONFIG.DH.GENERAL.range[*].distance (1/3/10/20/30) is
  * not used by the system for measuring and is ignored here. No band carries a penalty or mark.
  */
 import { makeSpec, noneSpec, showsButton } from '../core/spec.mjs';
 import { itemsOf } from './util.mjs';
 import { sceneUnits } from '../canvas/geometry.mjs';
-import { defaultCellMeasure, defaultDistance } from './measure.mjs';
+import { defaultDistance } from './measure.mjs';
 
 export const BANDS = ['melee', 'veryClose', 'close', 'far', 'veryFar'];
 /** The SRD's grid conversion (squares), used only when the system's range settings are unavailable. */
@@ -23,6 +24,7 @@ const systemRanges = () => globalThis.canvas?.scene?.rangeSettings ?? globalThis
 const systemGridDistance = () => globalThis.canvas?.scene?.grid?.distance ?? globalThis.canvas?.grid?.distance ?? 5;
 const systemLocalize = key => globalThis.game?.i18n?.localize?.(key) ?? key;
 const round = n => Math.round(n * 100) / 100;
+const toGrid = (distance, grid) => round(Math.round(distance / grid) * grid);
 
 const valuesOf = collection => {
   if (!collection) return [];
@@ -71,6 +73,9 @@ export const daggerheartRows = [
       const item = actor.items?.get?.(el.dataset.itemId) ?? null;
       return item ? { actor, item, actionIndex: null } : null;
     },
+    // Rows rendered with hideControls have no .controls: the button lands in .inventory-item-header, which
+    // carries data-action="toggleExtended". Triggers stops propagation on its button's click, so pressing it
+    // does not also expand / collapse the row.
     host: el => el.querySelector(':scope > .controls, :scope > .item-main > .inventory-item-header > .controls')
       ?? el.querySelector(':scope .inventory-item-header') ?? el,
     // Plain <a> like the system's own row controls (equip, send to chat, context menu).
@@ -113,7 +118,10 @@ export function createDaggerheartAdapter({
       const max = edge[band];
       if (!(max > min)) continue;
       const shown = band === 'veryFar' ? `${edge.far}+` : max;
-      bands.push({ min, max, penalty: 0, tone: bands.length ? 'increment' : 'base', label: `${nameOf(band)} · ${shown} ${u}` });
+      const entry = { min, max, penalty: 0, tone: bands.length ? 'increment' : 'base', label: `${nameOf(band)} · ${shown} ${u}` };
+      // Very Far is always in range for the system: badges treat it as open-ended; only the drawing stops at the cap.
+      if (band === 'veryFar') entry.unbounded = true;
+      bands.push(entry);
       min = max;
     }
     return makeSpec({ kind: bands.length > 1 ? 'increments' : 'radius', bands, itemName: name });
@@ -138,9 +146,30 @@ export function createDaggerheartAdapter({
     return entries;
   }
 
+  /**
+   * DhTokenPlaceable#isWithinRange: `distanceTo(target, { exact: true })` (straight line between the tokens'
+   * nearest cells, the scene's diagonal rule ignored; adjacent → one grid distance), rounded to the nearest grid
+   * distance, then compared with the band. Falls back to the scene's grid measure without the system method.
+   */
+  function distance(source, target, spec, c = globalThis.canvas) {
+    if (!source || !target) return NaN;
+    const grid = Number(c?.grid?.distance) || Number(gridDistance()) || 5;
+    try {
+      const exact = typeof source.distanceTo === 'function' ? source.distanceTo(target, { exact: true }) : NaN;
+      if (Number.isFinite(exact)) return toGrid(exact, grid);
+    } catch { /* fall through */ }
+    return defaultDistance(source, target, spec, c);
+  }
+
+  /** The same rule between cells: straight-line cell-to-cell distance rounded to the grid. */
+  const cellMeasure = (_spec, unit = 5) => Object.assign(
+    (from, to) => toGrid(unit * Math.hypot(from.i - to.i, from.j - to.j), unit),
+    { bandSensitive: () => false }
+  );
+
   return {
     id: 'daggerheart', specFor, rangeLabel, resolveItem, listItems,
-    cellMeasure: defaultCellMeasure, distance: defaultDistance, rows: daggerheartRows
+    cellMeasure, distance, rows: daggerheartRows
   };
 }
 

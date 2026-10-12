@@ -16,8 +16,15 @@ export function inBand(band, distance, first = false) {
   return distance <= band.max && (first || band.min === 0 ? distance >= band.min : distance > band.min);
 }
 
+/**
+ * Index of the band a target distance falls in. A last band flagged `unbounded` (Daggerheart's Very Far) also
+ * takes everything past its max: its max is only how far it is drawn, not a range limit.
+ */
 export function bandIndexFor(bands, distance) {
-  return bands.findIndex((band, index) => inBand(band, distance, index === 0));
+  const index = bands.findIndex((band, i) => inBand(band, distance, i === 0));
+  const last = bands.at(-1);
+  if (index < 0 && last?.unbounded && distance > last.max) return bands.length - 1;
+  return index;
 }
 
 export const DEFAULT_UNITS = 'ft';

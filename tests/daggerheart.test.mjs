@@ -3,6 +3,8 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { Triggers } from '../scripts/ui/Triggers.mjs';
 import { createDaggerheartAdapter, daggerheartAdapter } from '../scripts/adapters/daggerheart.mjs';
+import { classifyTargets, badgeText } from '../scripts/core/targets.mjs';
+import { DIAGONALS, bandCells } from '../scripts/core/cells.mjs';
 
 // The system's default range thresholds (DhVariantRules.rangeMeasurement / DhScene#rangeSettings), in scene units.
 const DEFAULTS = { enabled: true, melee: 5, veryClose: 15, close: 30, far: 60 };
@@ -47,6 +49,47 @@ test('very far action: five bands, Very Far open-ended up to 5× Far', () => {
     [0, 5, 'Melee · 5 ft'], [5, 15, 'Very Close · 15 ft'], [15, 30, 'Close · 30 ft'], [30, 60, 'Far · 60 ft'], [60, 300, 'Very Far · 60+ ft']
   ]);
   assert.ok(spec.bands.every(b => !b.mark && b.penalty === 0));
+});
+
+test('Very Far has no upper bound for badges (the system always allows it); the band is drawn to the cap', () => {
+  const spec = dh.specFor({ item: bolt });
+  assert.equal(spec.bands.at(-1).label, 'Very Far · 60+ ft');
+  const results = classifyTargets({ spec, targets: [{ id: 'cap', distance: 300 }, { id: 'beyond', distance: 450 }] });
+  assert.deepEqual(results.map(r => [r.id, r.bandIndex, r.outOfRange]), [['cap', 4, false], ['beyond', 4, false]]);
+  assert.equal(badgeText(results[1], 'ft'), '450 ft · ✓');
+  // Only Very Far is open-ended: a Far action still ends at Far.
+  const far = dh.specFor({ item: weapon('lb', 'Longbow', 'far') });
+  assert.equal(classifyTargets({ spec: far, targets: [{ id: 't', distance: 65 }] })[0].outOfRange, true);
+  // Painting stops at the cap.
+  const [, , , , veryFar] = bandCells({ originCells: [{ i: 100, j: 100 }], bands: spec.bands, measure: dh.cellMeasure(spec, 5), unit: 5 });
+  assert.equal(Math.max(...veryFar.map(c => Math.abs(c.j - 100))), 60);
+});
+
+test('distance: the system\'s exact token distance rounded to the grid, like isWithinRange', () => {
+  const canvas = { grid: { isSquare: true, distance: 5, diagonals: DIAGONALS.EQUIDISTANT } };
+  const calls = [];
+  const source = { distanceTo: (target, options) => { calls.push(options); return target.d; } };
+  assert.equal(dh.distance(source, { d: 6 * 5 * Math.SQRT2 }, null, canvas), 40, '6 squares diagonal: 42.4 → 40 (Far)');
+  assert.deepEqual(calls, [{ exact: true }]);
+  assert.equal(dh.distance(source, { d: 5 * Math.SQRT2 }, null, canvas), 5);
+  assert.equal(dh.distance(source, { d: 5 * Math.hypot(3, 1) }, null, canvas), 15, '15.8 → 15');
+  // No distanceTo (or NaN when the canvas is not ready): the scene's grid measure over occupied cells.
+  const cells = c => ({ distanceTo: () => NaN, document: { getOccupiedGridSpaceOffsets: () => c } });
+  assert.equal(dh.distance(cells([{ i: 0, j: 0 }]), cells([{ i: 6, j: 6 }]), null, canvas), 30);
+});
+
+test('cellMeasure: straight-line distance between cells rounded to the grid (the system ignores the diagonal rule)', () => {
+  const measure = dh.cellMeasure(null, 5);
+  assert.equal(measure.bandSensitive({}), false);
+  assert.equal(measure({ i: 0, j: 0 }, { i: 0, j: 1 }), 5);
+  assert.equal(measure({ i: 0, j: 0 }, { i: 1, j: 1 }), 5);
+  assert.equal(measure({ i: 0, j: 0 }, { i: 6, j: 6 }), 40);
+  assert.equal(measure({ i: 0, j: 0 }, { i: 3, j: 1 }), 15);
+  // 6 squares diagonal is Far, not Close.
+  const spec = dh.specFor({ item: bolt });
+  const groups = bandCells({ originCells: [{ i: 10, j: 10 }], bands: spec.bands, measure, unit: 5 });
+  assert.ok(groups[3].some(c => c.i === 16 && c.j === 16), 'Far');
+  assert.ok(!groups[2].some(c => c.i === 16 && c.j === 16), 'not Close');
 });
 
 test('action choice: weapon attack first, else first ranged action, actionIndex picks a specific one', () => {
