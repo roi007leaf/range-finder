@@ -10,9 +10,11 @@ export class TokenHudList {
   #el = null;
   #button = null;
   #token = null;
+  #pending = null;
 
-  constructor({ adapter, triggers, localize = key => key, units = () => 'ft', enabled = () => true, doc = globalThis.document }) {
+  constructor({ adapter, triggers, localize = key => key, units = () => 'ft', enabled = () => true, doc = globalThis.document, raf = globalThis.requestAnimationFrame?.bind(globalThis) }) {
     Object.assign(this, { adapter, triggers, localize, units, enabled, doc });
+    this.raf = raf ?? (callback => setTimeout(callback, 16));
     triggers.addRows([{
       hooks: [HUD_HOOK],
       selector: '.range-finder-hud-row[data-key]',
@@ -96,6 +98,18 @@ export class TokenHudList {
   /** Follow the HUD when it moves (token drag / canvas pan). */
   reposition() {
     if (this.isOpen && this.#button?.isConnected) this.#position(this.#el, this.#button);
+  }
+
+  /**
+   * v14 fires `canvasPan` before `hud.align()`, so the HUD still has its old position. Reposition on the next
+   * frame instead, coalescing bursts of pan/refresh events into one.
+   */
+  scheduleReposition() {
+    if (this.#pending !== null || !this.isOpen) return;
+    this.#pending = this.raf(() => {
+      this.#pending = null;
+      try { this.reposition(); } catch (error) { console.error('Range Finder |', error); }
+    });
   }
 
   close() {

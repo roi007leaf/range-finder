@@ -108,7 +108,7 @@ function rootOf(html, app) {
 }
 
 Hooks.once('init', () => {
-  registerSettings(() => schedule());
+  registerSettings(() => { pins?.rebuild(); schedule(); }, undefined, undefined, game.system.id);
   game.keybindings.register(MODULE_ID, 'preview', {
     name: 'RANGE_FINDER.Keys.Preview.Name', hint: 'RANGE_FINDER.Keys.Preview.Hint',
     editable: [{ key: 'AltLeft' }],
@@ -199,7 +199,7 @@ Hooks.on('closeTokenHUD', () => {
   try { hudList?.close(); } catch (error) { report(error); }
 });
 for (const hook of ['refreshToken', 'canvasPan']) {
-  Hooks.on(hook, () => { try { hudList?.reposition(); } catch (error) { report(error); } });
+  Hooks.on(hook, () => { try { hudList?.scheduleReposition(); } catch (error) { report(error); } });
 }
 
 const headerDeps = () => ({ adapter, triggers, localize: key => game.i18n.localize(key) });
@@ -236,7 +236,7 @@ Hooks.on('destroyToken', token => {
 Hooks.on('deleteToken', document => pins?.dropToken(document.id));
 // A sharer who disconnects (closed tab, crash) can't send unpin; drop their shared pins here.
 Hooks.on('userConnected', (user, connected) => { if (!connected) pins?.dropUser(user.id); });
-Hooks.on('deleteItem', item => pins?.dropItem(item.uuid));
+Hooks.on('deleteItem', item => { pins?.dropItem(item.uuid); pins?.rebuild(); });
 for (const hook of ['updateItem', 'updateActor', 'createItem']) Hooks.on(hook, () => pins?.size && pins.rebuild());
 for (const hook of ['createWall', 'updateWall', 'deleteWall', 'createToken', 'updateToken', 'canvasPan', 'controlToken', 'updateCombat', 'deleteCombat']) {
   Hooks.on(hook, () => { if (pins?.size) schedule(); });

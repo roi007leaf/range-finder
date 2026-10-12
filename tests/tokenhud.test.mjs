@@ -148,6 +148,27 @@ test('Alt+click on a HUD row with an adapter variant pins that variant', () => {
   assert.equal(s.calls[0][1].tokenId, 't1');
 });
 
+test('scheduleReposition defers to the next frame and coalesces', () => {
+  const s = setup();
+  const frames = [];
+  s.hudList.raf = callback => frames.push(callback);
+  s.hudList.scheduleReposition();
+  assert.equal(frames.length, 0, 'closed: nothing scheduled');
+  s.hudList.attach(s.hud, s.root);
+  click(s, s.root.querySelector('.range-finder-hud-btn'));
+  s.root.getBoundingClientRect = () => ({ left: 100, right: 300, top: 10 });
+  s.hudList.reposition();
+  s.root.getBoundingClientRect = () => ({ left: 100, right: 300, top: 77 });
+  s.hudList.scheduleReposition();
+  s.hudList.scheduleReposition();
+  assert.equal(frames.length, 1);
+  assert.equal(s.doc.getElementById('range-finder-hud-list').style.top, '10px', 'not moved before the frame');
+  frames[0]();
+  assert.equal(s.doc.getElementById('range-finder-hud-list').style.top, '77px');
+  s.hudList.scheduleReposition();
+  assert.equal(frames.length, 2, 'a new frame can be scheduled after one ran');
+});
+
 test('reposition is a no-op when closed and moves the open popover', () => {
   const s = setup();
   s.hudList.attach(s.hud, s.root);
