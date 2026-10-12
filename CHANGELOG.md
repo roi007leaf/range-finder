@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.0 (prerelease)
 
 - **Volley on the targets:** a token inside a volley zone now shows the total penalty on its own badge, e.g. "10 ft · –2 Volley", on a red plate.
 - **PF2e Unified Spellbook:** the 📏 now appears on its unified spell list (including scroll, wand and staff spells).
