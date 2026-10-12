@@ -3,6 +3,7 @@ import { makeSpec, noneSpec, showsButton, singleBand } from '../core/spec.mjs';
 import { sceneUnits } from '../canvas/geometry.mjs';
 import { defaultCellMeasure, defaultDistance } from './measure.mjs';
 import { getPath, itemsOf } from './util.mjs';
+import { createGenericRows } from './generic-rows.mjs';
 
 export { getPath };
 
@@ -25,7 +26,11 @@ export function readRange(raw) {
 
 const groupOf = item => (item.type === 'weapon' ? 'attacks' : item.type === 'spell' ? 'spells' : 'other');
 
-export function createGenericAdapter({ rangeField = settingField, units = sceneUnits } = {}) {
+const rowsEnabled = () => {
+  try { return globalThis.game?.settings?.get?.('range-finder', 'genericSheetRows') ?? true; } catch { return true; }
+};
+
+export function createGenericAdapter({ rangeField = settingField, units = sceneUnits, rowsEnabled: rowsOn = rowsEnabled } = {}) {
   function specFor({ item, units: given } = {}) {
     if (!item) return noneSpec();
     const name = item.name ?? '';
@@ -46,7 +51,7 @@ export function createGenericAdapter({ rangeField = settingField, units = sceneU
       .map(item => ({ item, actionIndex: null, group: groupOf(item) }));
   }
 
-  return { id: 'generic', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, listItems, rows: [] };
+  return { id: 'generic', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, listItems, rows: createGenericRows({ enabled: rowsOn }) };
 }
 
 export const genericAdapter = createGenericAdapter();

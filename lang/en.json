@@ -101,6 +101,10 @@
       "tokenHudButton": {
         "Name": "Range Finder: Token HUD button",
         "Hint": "Show a 📏 button on the Token HUD that lists the token's ranges."
+      },
+      "genericSheetRows": {
+        "Name": "Range Finder: 📏 on sheet rows (other systems)",
+        "Hint": "Add the range button to item rows on actor sheets in systems without built-in Range Finder support."
       }
     }
   }
