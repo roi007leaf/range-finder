@@ -12,7 +12,7 @@ test('every action entry has a name, a compendium uuid and a known rule', () => 
     if (['radius', 'emanation'].includes(entry.range.kind)) assert.ok(entry.range.feet > 0, slug);
   }
   assert.equal(Object.keys(SKILL_ACTIONS).length, 14);
-  assert.equal(Object.keys(FEAT_ACTIONS).length, 76);
+  assert.equal(Object.keys(FEAT_ACTIONS).length, 77);
 });
 
 test('uuids (and aliases) are unique across both tables', () => {
@@ -38,6 +38,11 @@ test('skill modifiers target known actions', () => {
     assert.ok(mod.set > 0, slug);
     for (const action of mod.actions) assert.ok(known.has(action), `${slug} → ${action}`);
   }
+  for (const slug of ['dimensional-pilfer', 'thief-of-moonlight']) {
+    assert.equal(SKILL_MODIFIERS[slug], undefined, slug);
+    assert.ok(FEAT_ACTIONS[slug], slug);
+  }
+  assert.equal(FEAT_ACTIONS['thief-of-moonlight'].range.feet, 30);
   assert.equal(SKILL_MODIFIERS['legendary-laugh'].set, 60);
   assert.equal(SKILL_MODIFIERS['hydraulic-maneuvers'].toggle, 'hydraulic-maneuvers');
 });

@@ -101,7 +101,8 @@ export const FEAT_ACTIONS = {
   'wave-spiral': { name: 'Wave Spiral', uuid: 'Compendium.pf2e.feats-srd.Item.fLlCodqKXyXbZR7C', range: { kind: 'emanation', feet: 10 } },
   'clear-the-way': { name: 'Clear the Way', uuid: 'Compendium.pf2e.feats-srd.Item.goFxIDlbWd8GN0kj', range: { kind: 'adjacent' } },
   'one-for-all': { name: 'One for All', uuid: 'Compendium.pf2e.feats-srd.Item.bCizH4ByTwbLcYA1', range: { kind: 'radius', feet: 30 } },
-  'dimensional-pilfer': { name: 'Dimensional Pilfer', uuid: 'Compendium.pf2e.feats-srd.Item.g3J3kSfnlYjq34Md', range: { kind: 'radius', feet: 60 } }
+  'dimensional-pilfer': { name: 'Dimensional Pilfer', uuid: 'Compendium.pf2e.feats-srd.Item.g3J3kSfnlYjq34Md', range: { kind: 'radius', feet: 60 } },
+  'thief-of-moonlight': { name: 'Thief of Moonlight', uuid: 'Compendium.pf2e.classfeatures.Item.hNBYP7FbvIBoS9CV', range: { kind: 'radius', feet: 30 } }
 };
 
 /** Owned feats that change a base action's range (longest wins). `toggle`: only while that roll option is on. */
@@ -110,8 +111,6 @@ export const SKILL_MODIFIERS = {
   'cunning-trickster-mask': { actions: ['feint'], set: 30 },
   'hydraulic-maneuvers': { actions: ['disarm', 'shove', 'trip'], set: 15, toggle: 'hydraulic-maneuvers' },
   'mages-field-dressing': { actions: ['battle-medicine'], set: 60 },
-  'dimensional-pilfer': { actions: ['steal', 'palm-an-object'], set: 60 },
-  'thief-of-moonlight': { actions: ['steal', 'palm-an-object'], set: 30 },
   'loud-singer': { actions: ['goblin-song'], set: 60 }
 };
 

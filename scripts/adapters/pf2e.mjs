@@ -39,8 +39,9 @@ function weaponSpec(actor, item, variant = null) {
     const suffix = areaSuffix(item, reach);
     // Real PF2e melee weapons have range null; a thrown melee weapon carries its increment in a thrown-N trait.
     const native = traitNumber(item, 'thrown') ?? (range?.increment || null);
-    const thrown = native ? adjustIncrement(native, { actor, weapon: item }).increment : grantedThrown(actor, item) || null;
-    if (thrown) return makeSpec({ kind: 'increments', bands: withSuffix(incrementBands(thrown, thrown * 6), suffix), overlays: [reachBand, ...overlays], itemName: named(name, label) });
+    const adjusted = native ? adjustIncrement(native, { actor, weapon: item, variant }) : null;
+    const thrown = adjusted ? adjusted.increment : grantedThrown(actor, item) || null;
+    if (thrown) return makeSpec({ kind: 'increments', bands: withSuffix(incrementBands(thrown, thrown * 6), suffix), overlays: [reachBand, ...overlays], itemName: named(name, label ?? adjusted?.label) });
     return makeSpec({ kind: 'reach', bands: withSuffix([reachBand], suffix), overlays, itemName: named(name, label) });
   }
   const suffix = areaSuffix(item);

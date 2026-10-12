@@ -71,7 +71,9 @@ export function adjustSpell(base, { actor, spell, variant = null }) {
   const ctx = context(actor);
   const spellSlug = slugOf(spell);
   let { kind, feet } = base, overlay = null, label = null;
-  for (const [slug, mod] of Object.entries(SPELL_MODIFIERS)) {
+  // set / toTouch first, so additive and touch→range modifiers (Reach Spell) apply to the result.
+  const ordered = Object.entries(SPELL_MODIFIERS).sort(([, x], [, y]) => Number(Boolean(y.set !== undefined || y.toTouch)) - Number(Boolean(x.set !== undefined || x.toTouch)));
+  for (const [slug, mod] of ordered) {
     if (mod.perUse && slug !== variant) continue;
     if (mod.spells && !mod.spells.includes(spellSlug)) continue;
     if (!modifierPresent(slug, mod, ctx)) continue;
@@ -102,9 +104,13 @@ export function perUseFor(actor, item) {
     return null;
   }
   if (item.type !== 'weapon') return null;
-  const table = item.isMelee ? REACH_MODIFIERS : WEAPON_MODIFIERS;
-  for (const [slug, mod] of Object.entries(table)) {
-    if (mod.perUse && weaponMatches(item, mod.when) && modifierPresent(slug, mod, ctx)) return { id: slug, label: mod.label };
-  }
-  return null;
+  const scan = (table, when = mod => mod.when) => {
+    for (const [slug, mod] of Object.entries(table)) {
+      if (mod.perUse && weaponMatches(item, when(mod)) && modifierPresent(slug, mod, ctx)) return { id: slug, label: mod.label };
+    }
+    return null;
+  };
+  if (!item.isMelee) return scan(WEAPON_MODIFIERS);
+  // Melee: reach variants, then thrown-increment variants when the weapon has a native thrown increment.
+  return scan(REACH_MODIFIERS) ?? (traitNumber(item, 'thrown') ? scan(WEAPON_MODIFIERS) : null);
 }

@@ -92,3 +92,23 @@ test('passive spell modifiers: psychic cantrip, Touch Focus toggle, touch reach,
   const witch = specFor({ actor: makeActor({ items: [feat('witchs-charge')] }), item: grasp });
   assert.deepEqual(witch.overlays, [{ min: 0, max: 30, penalty: 0, tone: 'increment', label: 'Witch\'s Charge 30 ft' }]);
 });
+
+test('thrown per-use variant on a thrown melee weapon (Galloping Launch); reach overlay unchanged', () => {
+  const actor = makeActor({ items: [feat('galloping-launch')] });
+  const dagger = weapon('Dagger', { traits: ['agile', 'thrown-10'] });
+  assert.deepEqual(altVariant({ actor, item: dagger }), { id: 'galloping-launch', label: 'Galloping Launch' });
+  const base = specFor({ actor, item: dagger });
+  const spec = specFor({ actor, item: dagger, variant: 'galloping-launch' });
+  assert.equal(base.bands[0].max, 10);
+  assert.equal(spec.bands[0].max, 25);
+  assert.equal(spec.itemName, 'Dagger · Galloping Launch');
+  assert.deepEqual(spec.overlays, base.overlays);
+  assert.equal(altVariant({ actor, item: weapon('Sword', { traits: [] }) }), null);
+});
+
+test('Touch Focus + Reach Spell variant: touch → 30 ft', () => {
+  const actor = makeActor({ items: [feat('touch-focus'), feat('reach-spell')], options: ['touch-focus'] });
+  const spec = specFor({ actor, item: arc, variant: 'reach-spell' });
+  assert.equal(spec.kind, 'radius');
+  assert.equal(spec.bands[0].max, 30);
+});
