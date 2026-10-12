@@ -239,3 +239,11 @@ test('band labels keep a constant on-screen size: scale = 1/zoom, clamped to [0.
   assert.ok(pills.length > 0);
   assert.ok(pills.every(p => p.scale.value === 2));
 });
+
+test('target badges use the same screen-constant scale as band labels (times badge size)', () => {
+  const { PIXI } = fakePIXI();
+  const badges = new TargetBadges({ parent: new Container(), PIXI, makeText: () => new Container(), settings: () => ({ ...baseSettings, badgeScale: 1.5 }) });
+  const goblin = { id: 'g', center: { x: 0, y: 0 }, x: 0, y: 0, w: 100, h: 100 };
+  badges.draw([{ pin: pin(javelin), token, adapter: { ...pf2eAdapter, distance: () => 20 }, tint: null, ownerName: null }], { targets: [goblin], zoom: 0.25 });
+  assert.equal(badges.container.children[0].scale.value, 3 * 1.5);
+});

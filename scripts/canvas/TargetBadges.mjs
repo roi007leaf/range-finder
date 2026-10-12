@@ -1,4 +1,5 @@
 /** Distance/penalty plates above target tokens. */
+import { labelScale } from './RangeOverlay.mjs';
 import { badgeText, classifyTargets } from '../core/targets.mjs';
 import { bandStyle } from '../core/theme.mjs';
 import { faFamily } from './geometry.mjs';
@@ -63,7 +64,7 @@ export class TargetBadges {
     box.drawRoundedRect(0, 0, x - 4 + pad, height + pad, 7);
     box.endFill();
     plate.addChild(box, ...parts);
-    const scale = Math.min(2, Math.max(0.6, 1 / (zoom || 1))) * settings.badgeScale;
+    const scale = labelScale(zoom) * settings.badgeScale;
     plate.scale.set(scale);
     const width = (x - 4 + pad) * scale, plateHeight = (height + pad) * scale;
     // x and y both from the rendered center so the plate doesn't drift while the token animates.
