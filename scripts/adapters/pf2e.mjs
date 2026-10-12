@@ -3,8 +3,9 @@ import { alternatingDistance } from '../core/cells.mjs';
 import { incrementBands, makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
 import { adjustIncrement, adjustReach, adjustSpell, grantedThrown, perUseFor } from './pf2e-modifiers.mjs';
 import { pf2eRows } from './pf2e-rows.mjs';
-import { skillEntry, skillItem, skillSpec } from './pf2e-skills.mjs';
+import { skillActionItems, skillEntry, skillItem, skillSpec } from './pf2e-skills.mjs';
 import { sluggify, traitNumber, traitsOf } from './pf2e-util.mjs';
+import { itemsOf } from './util.mjs';
 
 /** SF2e area weapons: "Area burst 10 ft", "Auto-fire cone 15 ft". Mirrors CharacterPF2e#prepareAreaAttack. */
 export function areaSuffix(item, fallback = 0) {
@@ -132,4 +133,28 @@ export function resolveItem(actor, uuid) {
   return skillItem(uuid);
 }
 
-export const pf2eAdapter = { id: 'pf2e', specFor, altVariant, cellMeasure, distance, resolveItem, rows: pf2eRows };
+/** Token HUD list: strikes, every spellcasting entry's spells (incl. scrolls/wands/staves), other weapons, skill actions. */
+export function listItems(actor) {
+  const out = [];
+  const strikeIds = new Set();
+  (actor?.system?.actions ?? []).forEach((action, index) => {
+    if (!action?.item || action.visible === false) return;
+    strikeIds.add(action.item.id);
+    out.push({ item: action.item, actionIndex: index, group: 'attacks' });
+  });
+  const spellUuids = new Set();
+  for (const collection of actor?.spellcasting?.collections?.values?.() ?? []) {
+    for (const spell of collection?.values?.() ?? []) {
+      if (!spell?.uuid || spellUuids.has(spell.uuid)) continue;
+      spellUuids.add(spell.uuid);
+      out.push({ item: spell, actionIndex: null, group: 'spells' });
+    }
+  }
+  for (const item of itemsOf(actor)) {
+    if ((item?.type === 'weapon' || item?.type === 'melee') && !strikeIds.has(item.id)) out.push({ item, actionIndex: null, group: 'other' });
+  }
+  for (const item of skillActionItems(actor)) out.push({ item, actionIndex: null, group: 'skills' });
+  return out;
+}
+
+export const pf2eAdapter = { id: 'pf2e', specFor, altVariant, cellMeasure, distance, resolveItem, listItems, rows: pf2eRows };

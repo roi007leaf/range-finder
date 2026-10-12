@@ -1,4 +1,6 @@
 /** Where PF2e sheets and pf2e-hud list items, attacks and spells. */
+import { skillItem } from './pf2e-skills.mjs';
+
 const itemOf = (actor, id) => (id ? actor?.items?.get(id) ?? null : null);
 
 function strikeAt(actor, index, itemId) {
@@ -78,6 +80,38 @@ export const pf2eRows = [
     selector: '.item.shortcut[data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), item: itemOf(hudActor(app), el.dataset.itemId), actionIndex: null }),
     persistentHud: true,
+    ghostTargets: hudGhost
+  },
+  {
+    // Character sheet Actions tab: owned action/feat items whose slug is a ranged skill action.
+    hooks: ['renderCharacterSheetPF2e'],
+    selector: 'li.action.item[data-item-id]',
+    resolve: (el, app) => {
+      const item = itemOf(app.actor, el.dataset.itemId);
+      return item && (item.type === 'action' || item.type === 'feat') ? { actor: app.actor, item, actionIndex: null } : null;
+    },
+    host: el => el.querySelector(':scope > .button-group') ?? controlsHost(el)
+  },
+  {
+    hooks: ['renderActionsSidebarPF2eHUD'],
+    selector: '.item.action[data-item-id]',
+    resolve: (el, app) => {
+      const actor = hudActor(app);
+      const item = itemOf(actor, el.dataset.itemId) ?? skillItem(el.dataset.itemUuid);
+      return item ? { actor, item, actionIndex: null } : null;
+    },
+    host: el => el.querySelector(':scope > .controls') ?? nameHost(el),
+    ghostTargets: hudGhost
+  },
+  {
+    // Skills sidebar: rows carry the action's compendium uuid (avoids pf2e-hud's key mismatches, e.g. disable-device).
+    hooks: ['renderSkillsSidebarPF2eHUD'],
+    selector: '.item.statistic[data-item-uuid]',
+    resolve: (el, app) => {
+      const item = skillItem(el.dataset.itemUuid);
+      return item ? { actor: hudActor(app), item, actionIndex: null } : null;
+    },
+    host: el => el.querySelector(':scope > .controls') ?? nameHost(el),
     ghostTargets: hudGhost
   }
 ];
