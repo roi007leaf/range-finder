@@ -1,0 +1,13 @@
+# Changelog
+
+## 0.1.0 (prerelease)
+
+First release.
+
+- **Show any range on the canvas:** a 📏 button on strikes, weapons, spells and skill actions draws the range around the token as penalty bands (range increments, reach, volley zones), with distance and penalty badges on every visible token.
+- **Pin, preview, share:** click to pin, hold Alt over a row to preview, Shift+click to show everyone in your player color, Esc to clear.
+- **Gets out of the way:** the sheet or PF2e HUD sidebar you used fades and becomes click-through while a range is shown; the PF2e HUD sidebar reopens after an Alt preview.
+- **PF2e / SF2e:** range increments, reach (incl. the 10 ft reach diagonal), thrown, volley, spells (incl. scrolls, wands, staves), skill actions (Demoralize, Athletics maneuvers, Treat Wounds, …), feat actions, and range modifiers the system doesn't apply itself (Reach Spell and other per-use boosts via Alt+click). pf2e-hud sidebars and shortcuts supported.
+- **D&D 5e:** normal and long range (Disadv.), reach, thrown, touch and self-area spells, unit conversion.
+- **Every system:** Token HUD 📏 list, item-sheet header button, a configurable range field, scene units and Foundry's diagonal rule.
+- Optional: dim squares behind walls, colorblind palette, outline-only bands, badges only in combat.
