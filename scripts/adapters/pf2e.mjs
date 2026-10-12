@@ -3,6 +3,7 @@ import { alternatingDistance } from '../core/cells.mjs';
 import { incrementBands, makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
 import { adjustIncrement, adjustReach, adjustSpell, grantedThrown, perUseFor } from './pf2e-modifiers.mjs';
 import { pf2eRows } from './pf2e-rows.mjs';
+import { skillEntry, skillItem, skillSpec } from './pf2e-skills.mjs';
 import { sluggify, traitNumber, traitsOf } from './pf2e-util.mjs';
 
 /** SF2e area weapons: "Area burst 10 ft", "Auto-fire cone 15 ft". Mirrors CharacterPF2e#prepareAreaAttack. */
@@ -93,6 +94,8 @@ export function specFor({ actor, item, actionIndex = null, variant = null }) {
   if (!item) return noneSpec();
   if (item.type === 'spell') return spellSpec(actor, item, variant);
   if (item.type === 'weapon' || item.type === 'melee') return weaponSpec(actor, item, variant);
+  const entry = skillEntry(item);
+  if (entry) return skillSpec(actor, entry, item.name ?? entry.name);
   return noneSpec(null, item.name ?? '');
 }
 
@@ -125,7 +128,8 @@ export function resolveItem(actor, uuid) {
   for (const collection of actor?.spellcasting?.collections?.values?.() ?? []) {
     for (const spell of collection?.values?.() ?? []) if (spell?.uuid === uuid) return spell;
   }
-  return null;
+  // Skill-action pins carry the action's compendium uuid; resolve it even when the pack isn't available.
+  return skillItem(uuid);
 }
 
 export const pf2eAdapter = { id: 'pf2e', specFor, altVariant, cellMeasure, distance, resolveItem, rows: pf2eRows };
