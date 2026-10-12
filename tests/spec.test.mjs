@@ -37,6 +37,19 @@ test('inBand: first band includes 0, later bands exclude their min', () => {
   assert.equal(bandIndexFor([a, b], 61), -1);
 });
 
+test('a first band with min > 0 (minimum range) includes its min and excludes anything closer', () => {
+  const band = { min: 10, max: 60, penalty: 0, tone: 'base', label: '10–60 ft' };
+  assert.equal(bandIndexFor([band], 0), -1);
+  assert.equal(bandIndexFor([band], 5), -1);
+  assert.equal(bandIndexFor([band], 10), 0);
+  assert.equal(bandIndexFor([band], 60), 0);
+  assert.equal(bandIndexFor([band], 61), -1);
+  assert.ok(inBand(band, 10, true));
+  assert.ok(!inBand(band, 10));
+  assert.ok(!inBand(band, 9, true));
+  assert.ok(makeSpec({ kind: 'radius', bands: [band] }));
+});
+
 test('makeSpec validates kinds and bands', () => {
   assert.equal(makeSpec({ kind: 'nope', bands: singleBand(30) }), null);
   assert.equal(makeSpec({ kind: 'radius', bands: [] }), null);

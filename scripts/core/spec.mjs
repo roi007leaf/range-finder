@@ -8,13 +8,16 @@ export function fmtPenalty(penalty) {
   return `${penalty < 0 ? '–' : '+'}${Math.abs(penalty)}`;
 }
 
-/** The first band starts at 0 inclusive; later bands exclude their min (it belongs to the band before). */
-export function inBand(band, distance) {
-  return distance <= band.max && (band.min === 0 ? distance >= 0 : distance > band.min);
+/**
+ * The first band includes its min (0, or a minimum range such as Crucible's: anything closer is out of range);
+ * later bands exclude their min (it belongs to the band before). A band starting at 0 always includes 0.
+ */
+export function inBand(band, distance, first = false) {
+  return distance <= band.max && (first || band.min === 0 ? distance >= band.min : distance > band.min);
 }
 
 export function bandIndexFor(bands, distance) {
-  return bands.findIndex(band => inBand(band, distance));
+  return bands.findIndex((band, index) => inBand(band, distance, index === 0));
 }
 
 export const DEFAULT_UNITS = 'ft';

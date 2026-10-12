@@ -71,7 +71,7 @@ export function bandCells({ originCells, bands, measure, unit = 5, bounds = null
       const base = sensitive ? nearest(cell) : null;
       for (let b = 0; b < bands.length; b++) {
         const distance = sensitive && !sensitive[b] ? base : nearest(cell, bands[b]);
-        if (inBand(bands[b], distance)) { groups[b].push(cell); break; }
+        if (inBand(bands[b], distance, b === 0)) { groups[b].push(cell); break; }
       }
     }
   }

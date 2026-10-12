@@ -29,6 +29,14 @@ test('2x2 token excludes its own cells', () => {
   assert.equal(ring.length, 12);
 });
 
+test('a first band with min > 0 leaves the cells closer than min unpainted (min itself included)', () => {
+  const band = { min: 10, max: 15, penalty: 0, tone: 'base', label: '10–15 ft' };
+  const [cells] = bandCells({ originCells: [{ i: 10, j: 10 }], bands: [band], measure: (a, b) => chebyshevDistance(a, b) });
+  assert.equal(cells.length, 7 * 7 - 3 * 3);
+  assert.ok(cells.some(c => c.i === 12 && c.j === 10), '10 ft away is in range');
+  assert.ok(!cells.some(c => c.i === 11 && c.j === 10), '5 ft away is too close');
+});
+
 test('bounds clip to the scene grid', () => {
   const [cells] = bandCells({ originCells: [{ i: 0, j: 0 }], bands: singleBand(5), measure: plain, bounds: { rows: 10, cols: 10 } });
   assert.equal(cells.length, 3);
