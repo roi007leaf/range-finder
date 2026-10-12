@@ -74,6 +74,41 @@ Reads `item.system.range = { value, long, reach, units }` (weapons) and `system.
 - `getHeaderControlsApplicationV2` (AppV2 item sheets) and `getItemSheetHeaderButtons` / `getApplicationHeaderButtons` (AppV1 sheets, e.g. PF2e item sheets): add a `📏` control for embedded items whose adapter spec has a range.
 - Click pins the item for the owning actor's token (same token resolution as sheet rows; warning if none); Shift+click shares. The item sheet is ghosted like actor sheets.
 
+## PF2e/SF2e skill actions and range modifiers
+
+Source data: `docs/research/pf2e-range-catalog.json` (+ `.md`), curated from the PF2e 8.6 compendia (actions, feats, class/ancestry features, equipment, effects). PF2e action definitions carry no range data, so ranges come from a module table.
+
+### Runtime table
+`scripts/adapters/pf2e-ranges.mjs` — a curated, data-only table derived from the catalog:
+- `SKILL_ACTIONS`: slug → range rule: `{ kind: 'radius', feet }`, `'reach'` (melee reach; Athletics maneuvers use weapon reach), `'adjacent'` (label "Adjacent", 5 ft regardless of reach), `'touch'`, or `{ kind: 'emanation', feet }` (radius labelled "Emanation N ft").
+- `FEAT_ACTIONS`: slug → range rule for feat/feature actions that are ranged skill checks (Bon Mot, Scare to Death, You're Next, Pistol Twirl, …).
+- `SKILL_MODIFIERS`: feat slug → `{ actions: [...slugs], set | add feet, toggle?: rollOption }` (Legendary Laugh → Demoralize 60; Mage's Field Dressing → Battle Medicine 60; Hydraulic Maneuvers → Disarm/Shove/Trip 15 when `hydraulic-maneuvers`; Dimensional Pilfer / Thief of Moonlight → Steal/Palm ranges; Loud Singer; …).
+- `SPELL_MODIFIERS`: passive spell-range changes the system doesn't apply (Touch Focus, Witch's Charge, Grasping Spirits Spell, psychic conscious-mind cantrip ranges, Wand of Reaching, …) and per-use spellshapes (Reach Spell: +30 ft, touch → 30 ft).
+- `WEAPON_MODIFIERS` / `REACH_MODIFIERS`: only the entries PF2e does NOT already reflect in `WeaponPF2e#range` / `CreaturePF2e#getReach` (Axe Thrower, Magnifying Scope, Throw and Catch, Harpoon Bolt, Galloping Launch, Scatter Blast; Looming Gait, Well-Armed, Giant's Lunge, Mutate Weapon, Extending rune, Soulpiercer, Tasset of Flexibility). Everything the system already applies (Far Shot, Far Lobber, Strong Arm, Crossbow Crack Shot, runes/scopes, Lunge/Enlarge/size/battle forms via reach) is read for free and must not be double-applied.
+- Detection: owning the feat/item by slug (`actor.items` / `itemTypes.feat`), plus roll options for toggles (`actor.getRollOptions()` contains e.g. `lunge`, `hydraulic-maneuvers`).
+
+### Rules (decided)
+1. Battle Medicine, Treat Wounds, Treat Poison/Disease, Administer First Aid, Steal, Palm an Object → **adjacent** ("Adjacent"); Force Open / Disable a Device / Pick a Lock are not shown (interact, no tactical value).
+2. **Seek** — no button (GM-chosen area; phase 2 with area shapes).
+3. **`reach-N` weapons + Lunge** — add the Lunge bonus ourselves when the `lunge` roll option is active (the system's `getReach` ignores it for `reach-N`).
+4. **Athletics maneuvers** (Shove, Trip, Disarm, Grapple, Reposition) — best reach among equipped weapons with the matching trait, else base reach; Trip with a `ranged-trip` weapon uses that weapon's first range increment (labelled "Ranged trip · –2").
+5. **Base-action modifiers** (e.g. Legendary Laugh) change the base row's range when owned; feat actions with their own rows (You're Next, Warning Shot, Pistol Twirl, Talent Envy) get their own buttons with their own rules.
+6. **Area Demoralize feats** ("each enemy within 30 ft") — radius labelled "Emanation N ft".
+7. **Per-use modifiers** — toggles are read from the actor's roll options at draw time. **Reach Spell** (cast-time spellshape, no toggle): **Alt+click 📏 on a spell row = "with Reach Spell"**, available only when the actor owns Reach Spell (or an equivalent from the table); the pin label reads e.g. "Electric Arc · Reach Spell 60 ft". Alt+click must not collide with the hold-Alt preview: the preview key's hover-preview is suppressed while a click with Alt is in progress (click wins).
+8. **pf2e-hud quirks** — skills-sidebar rows are identified by `data-item-uuid` (actions resolve via `fromUuidSync` to the compendium action → slug), avoiding the `disable-device` vs `disable-a-device` key mismatch. Actions pf2e-hud doesn't list (Encouraging Words) get no HUD button.
+
+### Triggers for skill actions
+- **pf2e-hud skills sidebar:** hook `renderSkillsSidebarPF2eHUD`; rows `.item.statistic[data-item-uuid]`; host `.controls`; resolve slug from the uuid; ghosting like other HUD sidebar rows.
+- **Owned action/feat rows:** PF2e character sheet `li.action.item[data-item-id]` and pf2e-hud actions sidebar `.item.action[data-item-id]` — a button appears when the item's slug is in `FEAT_ACTIONS` or `SKILL_ACTIONS`.
+- The PF2e character sheet doesn't list generic skill actions (Demoralize etc.), so those buttons live in the pf2e-hud skills sidebar and the Token HUD list (`listItems` gains a "Skill actions" group: base skill actions with ranges + owned feat actions).
+- Skill-action pins are keyed by a synthetic item: `itemUuid` = the action's compendium uuid (or owned feat uuid) and the spec is built by the adapter from the table + the actor's modifiers. `build`/`resolveItem` must resolve compendium action uuids (`fromUuidSync` works for compendium index entries; fall back to slug lookup in the table).
+
+### Testing (additions)
+- Table-driven tests: each `SKILL_ACTIONS` rule → spec (radius/reach/adjacent/touch/emanation labels).
+- Modifiers: Legendary Laugh → Demoralize 60; Hydraulic Maneuvers only with roll option; Lunge + `reach-N`; Mage's Field Dressing; Reach Spell Alt+click (+30, touch → 30) only when owned; a system-applied modifier (Far Shot) is not double-applied.
+- Athletics maneuver weapon choice (trait match, best reach, ranged-trip).
+- pf2e-hud skills row resolution by uuid (fixture DOM).
+
 ## Settings (additions)
 
 | Key | Scope | Default | Meaning |
