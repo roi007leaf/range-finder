@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { JSDOM } from 'jsdom';
+import { Triggers } from '../scripts/ui/Triggers.mjs';
 import { createDnd5eAdapter, dnd5eAdapter } from '../scripts/adapters/dnd5e.mjs';
 
 const convert = (value, from, to) => (from === to ? value : from === 'm' && to === 'ft' ? value * 10 / 3 : from === 'ft' && to === 'm' ? value * 0.3 : value);
@@ -82,4 +84,32 @@ test('default instance: no dnd5e global → identity conversion, scene units ft'
   assert.equal(dnd5eAdapter.id, 'dnd5e');
   assert.equal(dnd5eAdapter.specFor({ item: longbow }).bands[0].max, 150);
   assert.ok(Number.isNaN(dnd5eAdapter.distance({}, {})));
+});
+
+test('sheet rows: ruler in .item-controls of inventory/feature/spell rows that have a range', () => {
+  const dom = new JSDOM(`<div class="application sheet actor" id="sheet"><dnd5e-inventory class="inventory-element"><ol class="item-list">
+    <li class="item" data-item-id="bow"><div class="item-row"><div class="item-name">Longbow</div><div class="item-detail item-controls"></div></div></li>
+    <li class="item" data-item-id="rope"><div class="item-row"><div class="item-name">Rope</div><div class="item-detail item-controls"></div></div></li>
+  </ol></dnd5e-inventory></div>`);
+  const doc = dom.window.document;
+  const bow = { ...longbow, uuid: 'Actor.a.Item.bow' };
+  const actor = { id: 'a', items: new Map([['bow', bow], ['rope', { name: 'Rope', type: 'loot', uuid: 'Actor.a.Item.rope', system: {} }]]) };
+  const calls = [];
+  const pins = { previewing: false, toggle: req => { calls.push(req); return 'pinned'; }, preview: () => true, endPreview: () => true, pinFor: () => null };
+  const triggers = new Triggers({ adapter: dnd, pins, resolveToken: () => ({ id: 't1' }), localize: k => k, doc });
+  triggers.decorate(doc.getElementById('sheet'), { actor }, 'renderCharacterActorSheet');
+  const button = doc.querySelector('[data-item-id="bow"] .item-controls .range-finder-btn');
+  assert.ok(button);
+  assert.equal(doc.querySelector('[data-item-id="rope"] .range-finder-btn'), null);
+  button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  assert.equal(calls[0].itemUuid, 'Actor.a.Item.bow');
+  assert.equal(calls[0].sourceEl.id, 'sheet');
+  assert.deepEqual(dnd.rows[0].hooks, ['renderCharacterActorSheet', 'renderNPCActorSheet']);
+});
+
+test('listItems groups weapons, spells and others with a range or note', () => {
+  const items = [longbow, spell('Fire Bolt', { value: 120, units: 'ft' }), spell('Wish', { units: 'spec' }), spell('Shield', { units: 'self' }), { name: 'Rope', type: 'loot', system: {} }];
+  const breath = { name: 'Breath Weapon', type: 'feat', system: { activities: new Map([['a', { range: { units: 'self' }, target: { template: { type: 'cone', size: 30, units: 'ft' } } }]]) } };
+  const list = dnd.listItems({ items: [...items, breath] });
+  assert.deepEqual(list.map(e => [e.item.name, e.group]), [['Longbow', 'attacks'], ['Fire Bolt', 'spells'], ['Wish', 'spells'], ['Breath Weapon', 'other']]);
 });

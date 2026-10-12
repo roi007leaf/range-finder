@@ -1,5 +1,6 @@
 /** D&D 5e (6.x) adapter: weapon normal/long range and reach, spell/feature range, scene-unit conversion. */
-import { makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
+import { makeSpec, noneSpec, showsButton, singleBand } from '../core/spec.mjs';
+import { itemsOf } from './util.mjs';
 import { sceneUnits } from '../canvas/geometry.mjs';
 import { defaultCellMeasure, defaultDistance } from './measure.mjs';
 
@@ -27,6 +28,22 @@ const firstActivity = item => {
   return (activities.contents ?? Array.from(activities.values?.() ?? activities))[0] ?? null;
 };
 const capitalize = text => String(text).charAt(0).toUpperCase() + String(text).slice(1);
+
+/** Character/NPC sheet rows (inventory, features, spellbook all render `.inventory-element`). */
+export const dnd5eRows = [
+  {
+    hooks: ['renderCharacterActorSheet', 'renderNPCActorSheet'],
+    selector: '.inventory-element li.item[data-item-id]',
+    resolve: (el, app) => {
+      const actor = app?.actor ?? app?.document ?? null;
+      const item = actor?.items?.get?.(el.dataset.itemId) ?? null;
+      return item ? { actor, item, actionIndex: null } : null;
+    },
+    host: el => el.querySelector(':scope .item-controls') ?? el
+  }
+];
+
+const groupOf = item => (item.type === 'weapon' ? 'attacks' : item.type === 'spell' ? 'spells' : 'other');
 
 export function createDnd5eAdapter({ convert = systemConvert, units = sceneUnits } = {}) {
   /** Item units → scene units, only between known length units. */
@@ -89,7 +106,13 @@ export function createDnd5eAdapter({ convert = systemConvert, units = sceneUnits
     return item.type === 'weapon' ? weaponSpec(item, u) : rangedSpec(item, u);
   }
 
-  return { id: 'dnd5e', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, rows: [] };
+  function listItems(actor) {
+    return itemsOf(actor)
+      .filter(item => showsButton(specFor({ item })))
+      .map(item => ({ item, actionIndex: null, group: groupOf(item) }));
+  }
+
+  return { id: 'dnd5e', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, listItems, rows: dnd5eRows };
 }
 
 export const dnd5eAdapter = createDnd5eAdapter();
