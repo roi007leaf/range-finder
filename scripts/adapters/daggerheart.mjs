@@ -168,7 +168,7 @@ export function createDaggerheartAdapter({
   );
 
   return {
-    id: 'daggerheart', specFor, rangeLabel, resolveItem, listItems,
+    id: 'daggerheart', badgeAnchor: 'below', specFor, rangeLabel, resolveItem, listItems,
     cellMeasure, distance, rows: daggerheartRows
   };
 }

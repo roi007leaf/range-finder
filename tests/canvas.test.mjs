@@ -248,3 +248,22 @@ test('target badges use the same screen-constant scale as band labels (times bad
   badges.draw([{ pin: pin(javelin), token, adapter: { ...pf2eAdapter, distance: () => 20 }, tint: null, ownerName: null }], { targets: [goblin], zoom: 0.25 });
   assert.equal(badges.container.children[0].scale.value, 4 * 1.5);
 });
+
+test('badges: badgeAnchor "below" stacks downward from the token bottom; default stays above', () => {
+  const { PIXI } = fakePIXI();
+  const badges = new TargetBadges({ parent: new Container(), PIXI, makeText: () => new Container(), settings: () => baseSettings });
+  const goblin = { id: 'g', center: { x: 500, y: 500 }, x: 450, y: 450, w: 100, h: 100 };
+  const run = adapter => {
+    badges.draw([
+      { pin: pin(javelin), token, adapter, tint: null, ownerName: null },
+      { pin: pin(javelin, { key: 'me:src2' }), token, adapter, tint: null, ownerName: null }
+    ], { targets: [token, goblin], zoom: 1 });
+    return badges.container.children.map(plate => plate.position.y);
+  };
+  const base = { ...pf2eAdapter, distance: () => 20 };
+  const above = run(base);
+  assert.ok(above.every(y => y < 550 - 100 + 1) && above[1] < above[0], 'above: upward stack');
+  const below = run({ ...base, badgeAnchor: 'below' });
+  assert.ok(below[0] >= 550, 'first plate starts at/after the bottom edge');
+  assert.ok(below[1] > below[0], 'second plate stacks further down');
+});

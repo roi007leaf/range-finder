@@ -45,7 +45,7 @@ export class TargetBadges {
     }
   }
 
-  #badge(result, target, level, { pin, tint }, settings, zoom, units) {
+  #badge(result, target, level, { pin, tint, adapter }, settings, zoom, units) {
     const band = result.bandIndex === null ? null : pin.spec.bands[result.bandIndex];
     const s = band
       ? bandStyle({ tone: band.tone, index: result.bandIndex, palette: settings.palette, tint })
@@ -69,7 +69,10 @@ export class TargetBadges {
     const width = (x - 4 + pad) * scale, plateHeight = (height + pad) * scale;
     // x and y both from the rendered center so the plate doesn't drift while the token animates.
     const top = target.center.y - target.h / 2;
-    plate.position.set(target.center.x - width / 2, top - (plateHeight + 4) * (level + 1));
+    const y = adapter?.badgeAnchor === 'below'
+      ? target.center.y + target.h / 2 + 4 + (plateHeight + 4) * level
+      : top - (plateHeight + 4) * (level + 1);
+    plate.position.set(target.center.x - width / 2, y);
     return plate;
   }
 }
