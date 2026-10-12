@@ -53,12 +53,8 @@
 .range-finder-hud-row.is-shared { box-shadow: inset 2px 0 0 var(--range-finder-user, #2ec4b6); }
 .range-finder-hud-row.is-disabled { opacity: .5; cursor: help; }
 .range-finder-hud-empty { margin: 4px 6px; color: #9aa4ad; }
-/* D&D 5e sheets: sit like the system's own row controls (inline icon, inherited 11px size, no chip). */
-.dnd5e2 .item-controls > .range-finder-btn {
-  display: inline-block; width: auto; height: auto; margin: 0; padding: 0; border-radius: 0;
-  font-size: inherit; line-height: inherit; vertical-align: middle;
-  color: var(--color-text-secondary); background: none; box-shadow: none;
-}
+/* D&D 5e sheets: the button is a native dnd5e control (button.unbutton.config-button.item-control); undo our chip sizing. */
+.dnd5e2 .item-controls > .range-finder-btn { display: inline-block; width: unset; height: unset; margin: 0; padding: 0; border-radius: 0; font-size: inherit; background: none; box-shadow: none; }
 .dnd5e2 .item-controls > .range-finder-btn:hover,
 .dnd5e2 .item-controls > .range-finder-btn:focus-visible { color: #2ec4b6; background: none; text-shadow: 0 0 5px var(--color-shadow-primary); outline: none; }
 .dnd5e2 .item-controls > .range-finder-btn.is-active { color: #2ec4b6; background: none; box-shadow: none; text-shadow: 0 0 6px rgb(46 196 182 / 70%); }

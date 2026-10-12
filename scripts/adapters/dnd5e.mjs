@@ -39,7 +39,10 @@ export const dnd5eRows = [
       const item = actor?.items?.get?.(el.dataset.itemId) ?? null;
       return item ? { actor, item, actionIndex: null } : null;
     },
-    host: el => el.querySelector(':scope .item-controls') ?? el
+    host: el => el.querySelector(':scope .item-controls') ?? el,
+    // Same element and classes as dnd5e's own row controls so it lines up; always-interactive keeps it
+    // enabled on locked sheets (dnd5e disables plain buttons there).
+    button: { tag: 'button', classes: ['unbutton', 'config-button', 'item-control', 'always-interactive'] }
   }
 ];
 

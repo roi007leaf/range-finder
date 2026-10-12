@@ -100,6 +100,10 @@ test('sheet rows: ruler in .item-controls of inventory/feature/spell rows that h
   triggers.decorate(doc.getElementById('sheet'), { actor }, 'renderCharacterActorSheet');
   const button = doc.querySelector('[data-item-id="bow"] .item-controls .range-finder-btn');
   assert.ok(button);
+  // Rendered like dnd5e's own row controls so it lines up with them.
+  assert.equal(button.tagName, 'BUTTON');
+  assert.equal(button.type, 'button');
+  for (const cls of ['unbutton', 'config-button', 'item-control', 'always-interactive']) assert.ok(button.classList.contains(cls), cls);
   assert.equal(doc.querySelector('[data-item-id="rope"] .range-finder-btn'), null);
   button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   assert.equal(calls[0].itemUuid, 'Actor.a.Item.bow');

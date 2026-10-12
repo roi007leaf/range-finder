@@ -53,16 +53,18 @@ export class Triggers {
         this.#wire(el, el, spec, ctx);
       } else {
         const host = def.host?.(el) ?? el;
-        host.append(this.#button(el, spec, ctx));
+        host.append(this.#button(el, spec, ctx, def));
       }
     } catch (error) {
       console.error('Range Finder |', error);
     }
   }
 
-  #button(row, spec, ctx) {
-    const button = this.doc.createElement('a');
-    button.className = 'range-finder-btn';
+  /** A row definition may ask for a different element/classes so the button matches the sheet's own controls. */
+  #button(row, spec, ctx, def = {}) {
+    const button = this.doc.createElement(def.button?.tag ?? 'a');
+    if (button.tagName === 'BUTTON') button.type = 'button';
+    button.className = ['range-finder-btn', ...(def.button?.classes ?? [])].join(' ');
     button.innerHTML = '<i class="fa-solid fa-ruler-combined"></i>';
     this.#wire(button, row, spec, ctx);
     return button;
