@@ -1,17 +1,21 @@
 # Range Finder
 
-See an item's, attack's or spell's range right on the canvas.
+See an item's, attack's, spell's or skill action's range right on the canvas — in any system.
 
-- **📏 button** on every strike, weapon and spell row — PF2e character and NPC sheets, and PF2e HUD sidebars and shortcuts. Click to pin, click again (or press Esc) to clear.
+- **📏 on item rows** — PF2e/SF2e character and NPC sheets (strikes, weapons, spells, owned actions and feats), PF2e HUD sidebars (actions, spells, items, skills) and shortcuts, D&D 5e character and NPC sheets (inventory, features, spells). Click to pin, click again (or press Esc) to clear.
+- **📏 on the Token HUD** — every system: right-click your token, click 📏 and pick from its attacks, spells, skill actions and other items. Only items with a range or a note are listed (note-only rows are disabled, with the note as tooltip). Click a row to pin, Shift+click to share, hold Alt over a row to preview. The list follows the HUD when the token moves or the canvas pans. Turn the button off with *Token HUD button*.
+- **📏 in item sheet headers** — every system: an owned item's sheet gets a 📏 control (in the header menu on V2 sheets) that pins it for the owner's token.
 - **Shift+click** shares the range with everyone, tinted in your player color (needs the **Allow sharing** world setting). Shift+click an already pinned range to share it.
-- **Hold Alt** while hovering a row to preview its range without pinning. Alt is also Foundry's default "highlight objects" key, so placeables highlight while you hold it; rebind either in Configure Controls if that bothers you.
-- **GMs** get a "Range Finder — clear shared ranges" tool in the Token scene controls (and an unbound keybinding) that clears everyone's shared ranges.
-- **Penalty bands**: range increments drawn as merged bands labelled `60 ft · –2`, reach for melee weapons (including PF2e's 10 ft reach diagonal), volley zones hatched. PF2e thrown melee weapons (e.g. dagger) show both reach and thrown bands.
-- **Target badges**: every visible token shows `45 ft · –2`, `✓` or `✗`.
-- **Gets out of the way**: the window you clicked from fades while the range is shown; from PF2e HUD, only the open sidebar fades (the bar too if you enable it); hover it to bring it back.
+- **Hold Alt** while hovering a row to preview its range without pinning. Alt is also Foundry's "highlight objects" key; rebind either in Configure Controls.
+- **Alt+click** (PF2e/SF2e) a 📏 to use a per-use range boost you have: a spell *with Reach Spell* (+30 ft, touch → 30 ft; also Grasping Spirits Spell, Wand of Reaching), a strike with Extending, Giant's Lunge, Looming Gait, or a thrown variant such as Galloping Launch or Throw and Catch (these also work on melee weapons with thrown-N). The tooltip names the boost. Point at the 📏 first, then hold Alt and click — the click wins over the preview, and it works even while the window is faded.
+- **Bands**: PF2e range increments `60 ft · –2`, D&D 5e normal/long range (`600 ft · Disadv.`), reach, volley zones. SF2e area and automatic weapons show their area: `30 ft · Auto-fire cone 15 ft`.
+- **PF2e skill actions**: Demoralize 30 ft, Feint at your reach, Shove/Trip/Disarm/Grapple/Reposition at your best matching weapon's reach (ranged trip at –2), healing and thievery actions (Steal, Palm an Object) adjacent, 70+ feat actions (Bon Mot, Battle Medicine, Terrifying Howl…). Dimensional Pilfer (60 ft) and Thief of Moonlight (30 ft) are their own feat-action rows, not modifiers of Steal / Palm an Object. Owned feats that change ranges are applied (Legendary Laugh, Mage's Field Dressing, Hydraulic Maneuvers while toggled, Lunge with reach-N weapons…); ones PF2e already applies (Far Shot, Enlarge…) are read from the system, never doubled.
+- **Target badges**: every visible token shows `45 ft · –2`, `✓`, the band's mark (`Disadv.`) or `✗`.
+- **Any scene**: labels use the scene's units (`m` scenes show `7.5 m`); distances follow the scene's diagonal rule and measure edge to edge (PF2e/SF2e keep their own rules).
+- **Gets out of the way**: the window you clicked from fades while the range is shown; from PF2e HUD only the open sidebar fades (the persistent bar too if you enable *Also hide PF2e HUD bar*, off by default); hover it to bring it back. The Token HUD list never fades.
 - Optional: hatch squares without line of effect, colorblind palette, outline-only bands.
 
-Works on square grids (per-square bands) and hex/gridless scenes (rings). System-agnostic core with a PF2e adapter; other systems get a basic numeric-range fallback.
+Works on square grids (per-square bands) and hex/gridless scenes (rings). Built in: PF2e, SF2e, D&D 5e (6.x). Other systems use a generic adapter (see below). Area shapes (bursts, cones) are not drawn — ranges only.
 
 ## Keybindings
 
@@ -35,8 +39,14 @@ Rebindable in **Configure Controls**.
 | Dim behind walls | client | off |
 | Hide windows while showing range | client | Fade |
 | Also hide PF2e HUD bar | client | off |
+| Token HUD button | client | on |
 | Allow sharing | world | on |
 | Badges only in combat | world | off |
+| Range field (other systems) | world | empty (auto-detect) |
+
+## Other systems
+
+Without a built-in adapter, Range Finder reads `system.range` on items: a number, `{ value, long }` (long range is marked `Long`) or `{ value, units }`, in the scene's units. If your system keeps the range elsewhere, a GM can set **Range field** to that item data path (e.g. `system.attack.range`). Use the Token HUD 📏 or the item sheet 📏 to show it.
 
 ## For developers
 
@@ -46,6 +56,6 @@ Register an adapter for your system from the `rangeFinder.registerAdapters` hook
 Hooks.once('rangeFinder.registerAdapters', api => api.registerAdapter('my-system', adapter));
 ```
 
-See `scripts/adapters/generic.mjs` for the adapter shape. `game.modules.get('range-finder').api` exposes the same `registerAdapter` and `clear` functions, but a registration made after `setup` is not picked up.
+An adapter is `{ id, specFor(ctx), cellMeasure(spec, unit), distance(source, target, spec), rows, listItems(actor), rangeLabel?(spec, units), altVariant?(ctx), resolveItem?(actor, uuid) }`. `specFor` receives `{ actor, token, item, actionIndex, variant, units }` and returns distances in scene units; `listItems` feeds the Token HUD list (`[{ item, actionIndex, group: 'attacks'|'spells'|'skills'|'other' }]`). See `scripts/adapters/generic.mjs` and `scripts/adapters/dnd5e.mjs`. `game.modules.get('range-finder').api` exposes the same `registerAdapter` and `clear` functions, but a registration made after `setup` is not picked up.
 
 Run tests with `npm test`.
