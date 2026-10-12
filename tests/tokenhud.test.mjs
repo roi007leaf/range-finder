@@ -136,17 +136,6 @@ test('lists only items whose spec shows a button: ranged rows active, note-only 
   assert.ok(!rowNamed(s, 'Longbow').classList.contains('is-disabled'));
 });
 
-test('Alt+click on a HUD row with an adapter variant pins that variant', () => {
-  const s = setup();
-  s.hudList.triggers.adapter.altVariant = ctx => (ctx.item.uuid === 'Item.arc' ? { id: 'reach-spell', label: 'Reach Spell' } : null);
-  s.hudList.attach(s.hud, s.root);
-  click(s, s.root.querySelector('.range-finder-hud-btn'));
-  const arc = rowNamed(s, 'Electric Arc');
-  assert.equal(arc.getAttribute('data-range-finder-alt'), 'reach-spell');
-  click(s, arc, { altKey: true });
-  assert.equal(s.calls[0][1].variant, 'reach-spell');
-  assert.equal(s.calls[0][1].tokenId, 't1');
-});
 
 test('scheduleReposition defers to the next frame and coalesces', () => {
   const s = setup();

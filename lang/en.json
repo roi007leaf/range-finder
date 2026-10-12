@@ -2,8 +2,7 @@
   "RANGE_FINDER": {
     "Button": {
       "Show": "Show range (Shift+click to share)",
-      "Preview": "hold {key} to preview",
-      "Alt": "Alt+click: with"
+      "Preview": "hold {key} to preview"
     },
     "Hud": {
       "Button": "Ranges",

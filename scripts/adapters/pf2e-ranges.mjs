@@ -114,7 +114,7 @@ export const SKILL_MODIFIERS = {
 };
 
 /**
- * Spell range changes SpellPF2e#range ignores. `perUse`: cast-time choice → Alt+click variant.
+ * Spell range changes SpellPF2e#range ignores. `perUse`: cast-time choice → an outer "boost" band (mark = label).
  * add: +feet to a ranged spell; touch: touch → that many feet; touchReach: touch reach becomes N;
  * touchOverlay: extra outline around touch spells; set: fixed range for `spells`; toTouch: ranged → touch.
  */

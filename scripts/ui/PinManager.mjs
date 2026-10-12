@@ -2,10 +2,6 @@
 import { hasRange } from '../core/spec.mjs';
 
 const sameItem = (a, b) => a.itemUuid === b.itemUuid && (a.actionIndex ?? null) === (b.actionIndex ?? null);
-/** Same item and same per-use variant (e.g. "with Reach Spell"). */
-const same = (a, b) => sameItem(a, b) && (a.variant ?? null) === (b.variant ?? null);
-/** Requests carry `variant` only when set, so plain pins and their socket messages keep their v1 shape. */
-const withVariant = (request, variant) => (variant ? { ...request, variant: String(variant) } : request);
 
 export class PinManager {
   #pins = new Map();
@@ -23,22 +19,22 @@ export class PinManager {
   all() { return [...this.#pins.values(), ...(this.#preview ? [this.#preview] : [])]; }
   tokenIds() { return new Set(this.all().map(pin => pin.tokenId)); }
 
-  /** Button state: any pin of this item on this token, whatever its variant. */
+  /** Button state: the pin of this item on this token. */
   pinFor(request) {
     const pin = this.#pins.get(PinManager.key(this.userId, request.tokenId));
     return pin && sameItem(pin, request) ? pin : null;
   }
 
   #spec(request) {
-    const spec = this.build({ tokenId: request.tokenId, itemUuid: request.itemUuid, actionIndex: request.actionIndex ?? null, variant: request.variant ?? null });
+    const spec = this.build({ tokenId: request.tokenId, itemUuid: request.itemUuid, actionIndex: request.actionIndex ?? null });
     return hasRange(spec) ? spec : null;
   }
 
-  toggle({ tokenId, itemUuid, actionIndex = null, variant = null, share = false, sourceEl = null }) {
+  toggle({ tokenId, itemUuid, actionIndex = null, share = false, sourceEl = null }) {
     const key = PinManager.key(this.userId, tokenId);
-    const request = withVariant({ tokenId, itemUuid, actionIndex }, variant);
+    const request = { tokenId, itemUuid, actionIndex };
     const existing = this.#pins.get(key);
-    if (existing && same(existing, request)) {
+    if (existing && sameItem(existing, request)) {
       // Shift+click on an unshared pin upgrades it to shared instead of unpinning.
       if (share && !existing.shared && this.allowShare()) {
         existing.shared = true;
@@ -114,7 +110,7 @@ export class PinManager {
       return;
     }
     if (message.action !== 'pin') return;
-    const request = withVariant({ tokenId: message.tokenId, itemUuid: message.itemUuid, actionIndex: message.actionIndex ?? null }, message.variant);
+    const request = { tokenId: message.tokenId, itemUuid: message.itemUuid, actionIndex: message.actionIndex ?? null };
     const spec = this.#spec(request);
     if (!spec) return;
     this.#pins.set(key, { key, userId: message.userId, ...request, spec, shared: true, preview: false, sourceEl: null });

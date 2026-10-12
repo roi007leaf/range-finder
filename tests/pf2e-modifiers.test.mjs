@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { altVariant, specFor } from '../scripts/adapters/pf2e.mjs';
+import { specFor } from '../scripts/adapters/pf2e.mjs';
+import { badgeText, classifyTargets } from '../scripts/core/targets.mjs';
+import { rangeLabel } from '../scripts/core/spec.mjs';
 import { sluggify } from '../scripts/adapters/pf2e-util.mjs';
 
 const feat = slug => ({ type: 'feat', slug, name: slug });
@@ -25,29 +27,46 @@ const weapon = (name, { melee = true, traits = [], range = null, group = null, h
 const arc = spell('Electric Arc', '30 feet');
 const grasp = spell('Shocking Grasp', 'touch');
 
-test('Reach Spell: Alt variant only when owned; +30 ft, touch → 30 ft (spec rule 7)', () => {
+const boost = (min, max, label, mark) => ({ min, max, penalty: 0, tone: 'boost', label, mark });
+
+test('Reach Spell owned: an outer boost band (30, 60] marked "Reach Spell"', () => {
   const caster = makeActor({ items: [feat('reach-spell')] });
-  assert.deepEqual(altVariant({ actor: caster, item: arc }), { id: 'reach-spell', label: 'Reach Spell' });
-  const reached = specFor({ actor: caster, item: arc, variant: 'reach-spell' });
-  assert.deepEqual(reached.bands, [{ min: 0, max: 60, penalty: 0, tone: 'base', label: 'Reach Spell 60 ft' }]);
-  assert.equal(reached.itemName, 'Electric Arc · Reach Spell');
-  const touch = specFor({ actor: caster, item: grasp, variant: 'reach-spell' });
-  assert.equal(touch.kind, 'radius');
-  assert.equal(touch.bands[0].max, 30);
-  assert.equal(specFor({ actor: caster, item: arc }).bands[0].max, 30, 'no variant → unchanged');
-  const plain = makeActor();
-  assert.equal(altVariant({ actor: plain, item: arc }), null);
-  assert.equal(specFor({ actor: plain, item: arc, variant: 'reach-spell' }).bands[0].max, 30, 'not owned → ignored');
-  assert.equal(altVariant({ actor: caster, item: spell('Bless', '') }), null, 'no range → no variant');
+  const spec = specFor({ actor: caster, item: arc });
+  assert.deepEqual(spec.bands, [
+    { min: 0, max: 30, penalty: 0, tone: 'base', label: '30 ft' },
+    boost(30, 60, 'Reach Spell · 60 ft', 'Reach Spell')
+  ]);
+  assert.equal(spec.itemName, 'Electric Arc');
+  assert.equal(rangeLabel(spec), '30 ft');
+  const [inside, ring, beyond] = classifyTargets({ spec, targets: [{ id: 'a', distance: 25 }, { id: 'b', distance: 45 }, { id: 'c', distance: 65 }] });
+  assert.equal(badgeText({ ...inside, mark: spec.bands[inside.bandIndex].mark }), '25 ft · ✓');
+  assert.equal(badgeText({ ...ring, mark: spec.bands[ring.bandIndex].mark }), '45 ft · Reach Spell');
+  assert.equal(badgeText(beyond), '65 ft · ✗');
+});
+
+test('touch spell + Reach Spell: touch reach band plus an outer band to 30 ft', () => {
+  const spec = specFor({ actor: makeActor({ items: [feat('reach-spell')] }), item: grasp });
+  assert.equal(spec.kind, 'reach');
+  assert.deepEqual(spec.bands, [
+    { min: 0, max: 5, penalty: 0, tone: 'reach', label: 'Touch · 5 ft' },
+    boost(5, 30, 'Reach Spell · 30 ft', 'Reach Spell')
+  ]);
+});
+
+test('no per-use boost owned → spell spec unchanged; several boosts of equal reach → one band', () => {
+  assert.deepEqual(specFor({ actor: makeActor(), item: arc }).bands, [{ min: 0, max: 30, penalty: 0, tone: 'base', label: '30 ft' }]);
+  assert.equal(specFor({ actor: makeActor({ items: [feat('reach-spell')] }), item: spell('Bless', '') }).kind, 'none');
+  const both = makeActor({ items: [feat('reach-spell'), { type: 'consumable', slug: 'wand-of-reaching-3rd-rank', name: 'Wand' }] });
+  assert.deepEqual(specFor({ actor: both, item: arc }).bands.slice(1), [boost(30, 60, 'Reach Spell · 60 ft', 'Reach Spell')]);
   const wand = makeActor({ items: [{ type: 'consumable', slug: 'wand-of-reaching-3rd-rank', name: 'Wand' }] });
-  assert.deepEqual(altVariant({ actor: wand, item: arc }), { id: 'wand-of-reaching', label: 'Wand of Reaching' });
+  assert.deepEqual(specFor({ actor: wand, item: arc }).bands[1], boost(30, 60, 'Wand of Reaching · 60 ft', 'Wand of Reaching'));
 });
 
 test('a system-applied modifier (Far Shot) is not double-applied', () => {
   const archer = makeActor({ items: [feat('far-shot')] });
   const longbow = weapon('Longbow', { melee: false, range: { increment: 200, max: 1200 } });
   assert.deepEqual(specFor({ actor: archer, item: longbow }).bands.map(b => b.max), [200, 400, 600, 800, 1000, 1200]);
-  assert.equal(altVariant({ actor: archer, item: longbow }), null);
+  assert.equal(specFor({ actor: archer, item: longbow }).bands.some(b => b.tone === 'boost'), false);
 });
 
 test('Lunge adds 5 ft to reach-N weapons only (system handles base/reach)', () => {
@@ -73,13 +92,28 @@ test('passive weapon modifiers: Harpoon Bolt ammo, Axe Thrower', () => {
   assert.equal(specFor({ actor: makeActor(), item: battleAxe }).kind, 'reach');
 });
 
-test('per-use reach (Extending rune) is an Alt variant', () => {
+test('per-use reach boosts (Extending rune, Giant\'s Lunge): reach band plus an outer boost band', () => {
   const glaive = weapon('Glaive', { traits: ['reach', 'forceful'], runes: ['extending'] });
-  const actor = makeActor();
-  assert.deepEqual(altVariant({ actor, item: glaive }), { id: 'extending', label: 'Extending' });
-  const spec = specFor({ actor, item: glaive, variant: 'extending' });
-  assert.deepEqual([spec.bands[0].max, spec.bands[0].label, spec.itemName], [60, 'Extending · Reach 60 ft', 'Glaive · Extending']);
-  assert.equal(specFor({ actor, item: glaive }).bands[0].max, 10);
+  const spec = specFor({ actor: makeActor(), item: glaive });
+  assert.equal(spec.kind, 'reach');
+  assert.deepEqual(spec.bands, [
+    { min: 0, max: 10, penalty: 0, tone: 'reach', label: 'Reach 10 ft' },
+    boost(10, 60, 'Extending · Reach 60 ft', 'Extending')
+  ]);
+  assert.equal(spec.itemName, 'Glaive');
+  const sword = weapon('Longsword', { traits: ['versatile-p'] });
+  assert.deepEqual(specFor({ actor: makeActor({ items: [feat('giants-lunge')] }), item: sword }).bands, [
+    { min: 0, max: 5, penalty: 0, tone: 'reach', label: 'Reach 5 ft' },
+    boost(5, 10, 'Giant\'s Lunge · Reach 10 ft', 'Giant\'s Lunge')
+  ]);
+  assert.equal(specFor({ actor: makeActor(), item: sword }).bands.length, 1, 'no boost owned → unchanged');
+  assert.equal(specFor({ actor: makeActor({ items: [feat('giants-lunge')] }), item: glaive }).bands.find(b => b.label.startsWith('Giant')), undefined, 'a boost that does not reach further adds nothing');
+});
+
+test('several reach boosts: each that extends further, ordered outward', () => {
+  const halberd = weapon('Halberd', { traits: [], runes: ['extending'] });
+  const spec = specFor({ actor: makeActor({ items: [feat('giants-lunge')] }), item: halberd });
+  assert.deepEqual(spec.bands.map(b => [b.min, b.max, b.tone, b.mark ?? null]), [[0, 5, 'reach', null], [5, 10, 'boost', 'Giant\'s Lunge'], [10, 60, 'boost', 'Extending']]);
 });
 
 test('passive spell modifiers: psychic cantrip, Touch Focus toggle, touch reach, Witch\'s Charge outline', () => {
@@ -93,22 +127,22 @@ test('passive spell modifiers: psychic cantrip, Touch Focus toggle, touch reach,
   assert.deepEqual(witch.overlays, [{ min: 0, max: 30, penalty: 0, tone: 'increment', label: 'Witch\'s Charge 30 ft' }]);
 });
 
-test('thrown per-use variant on a thrown melee weapon (Galloping Launch); reach overlay unchanged', () => {
+test('thrown boost on a thrown melee weapon (Galloping Launch): thrown bands plus an outer boost band; reach overlay unchanged', () => {
   const actor = makeActor({ items: [feat('galloping-launch')] });
   const dagger = weapon('Dagger', { traits: ['agile', 'thrown-10'] });
-  assert.deepEqual(altVariant({ actor, item: dagger }), { id: 'galloping-launch', label: 'Galloping Launch' });
-  const base = specFor({ actor, item: dagger });
-  const spec = specFor({ actor, item: dagger, variant: 'galloping-launch' });
-  assert.equal(base.bands[0].max, 10);
-  assert.equal(spec.bands[0].max, 25);
-  assert.equal(spec.itemName, 'Dagger · Galloping Launch');
-  assert.deepEqual(spec.overlays, base.overlays);
-  assert.equal(altVariant({ actor, item: weapon('Sword', { traits: [] }) }), null);
+  const spec = specFor({ actor, item: dagger });
+  assert.equal(spec.kind, 'increments');
+  assert.deepEqual(spec.bands.slice(0, -1), specFor({ actor: makeActor(), item: dagger }).bands);
+  assert.deepEqual(spec.bands.at(-1), boost(60, 150, 'Galloping Launch · 150 ft', 'Galloping Launch'));
+  assert.deepEqual(spec.overlays, [{ min: 0, max: 5, penalty: 0, tone: 'reach', label: 'Reach 5 ft' }]);
+  assert.equal(spec.itemName, 'Dagger');
+  assert.equal(rangeLabel(spec), '10/60 ft');
+  assert.equal(specFor({ actor, item: weapon('Sword', { traits: [] }) }).bands.length, 1);
 });
 
-test('Touch Focus + Reach Spell variant: touch → 30 ft', () => {
+test('Touch Focus + Reach Spell: touch band plus an outer band to 30 ft', () => {
   const actor = makeActor({ items: [feat('touch-focus'), feat('reach-spell')], options: ['touch-focus'] });
-  const spec = specFor({ actor, item: arc, variant: 'reach-spell' });
-  assert.equal(spec.kind, 'radius');
-  assert.equal(spec.bands[0].max, 30);
+  const spec = specFor({ actor, item: arc });
+  assert.equal(spec.kind, 'reach');
+  assert.deepEqual(spec.bands.map(b => [b.min, b.max, b.tone]), [[0, 5, 'reach'], [5, 30, 'boost']]);
 });

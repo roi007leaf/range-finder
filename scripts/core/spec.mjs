@@ -1,6 +1,7 @@
 /** RangeSpec: what an adapter says an item reaches. Pure — no Foundry globals. */
 export const KINDS = ['reach', 'increments', 'radius', 'none'];
-export const TONES = ['base', 'increment', 'reach', 'penalty-zone'];
+/** `boost`: an outer band reached only with a per-use boost (PF2e Reach Spell); carries the boost's name as `mark`. */
+export const TONES = ['base', 'increment', 'reach', 'penalty-zone', 'boost'];
 export const MAX_INCREMENTS = 6;
 
 export function fmtPenalty(penalty) {
@@ -80,7 +81,9 @@ export const maxRange = spec => Math.max(0, ...[...(spec?.bands ?? []), ...(spec
 export function rangeLabel(spec, units = DEFAULT_UNITS) {
   if (!spec) return '';
   if (!hasRange(spec)) return spec.note ?? '';
-  const first = spec.bands[0], last = spec.bands.at(-1);
-  if (spec.kind === 'increments' && spec.bands.length > 1) return `${first.max}/${last.max} ${units}`;
+  // Boost bands are "only with …" extras: the short label shows the normal range.
+  const normal = spec.bands.filter(band => band.tone !== 'boost');
+  const first = spec.bands[0], last = normal.at(-1) ?? first;
+  if (spec.kind === 'increments' && normal.length > 1) return `${first.max}/${last.max} ${units}`;
   return first.label || `${first.max} ${units}`;
 }

@@ -127,7 +127,10 @@ export class RangeOverlay {
           }
         }
         if (overlay && band.tone === 'penalty-zone') this.#hatch(g, cells, s.fill, 0.45, geo);
-        if (overlay || settings.bandStyle !== 'fill') this.#stroke(g, loops, s, geo);
+        // Boost bands ("only with Reach Spell") always get a light hatch and an outline, whatever the band style.
+        const boost = band.tone === 'boost';
+        if (boost) this.#hatch(g, cells, s.fill, 0.3, geo);
+        if (overlay || boost || settings.bandStyle !== 'fill') this.#stroke(g, loops, s, geo);
         if (settings.showLabels) this.#label(labelLayer, band.label, topRightPoint(loops), s, geo);
       });
     };
@@ -218,7 +221,7 @@ export class RangeOverlay {
         if (band.min > 0) { g.beginHole(); g.drawCircle(x, y, inner); g.endHole(); }
         g.endFill();
       }
-      if (overlay || settings.bandStyle !== 'fill') {
+      if (overlay || band.tone === 'boost' || settings.bandStyle !== 'fill') {
         g.lineStyle({ width: s.lineWidth + 2, color: s.halo, alpha: 0.45 });
         g.drawCircle(x, y, outer);
         g.lineStyle({ width: s.lineWidth, color: s.line, alpha: s.lineAlpha });

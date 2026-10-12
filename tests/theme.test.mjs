@@ -29,3 +29,12 @@ test('reach, penalty zone, palette, preview, tint, opacity', () => {
   assert.equal(bandStyle({ tone: 'base', tint: 0xff0000 }).line, 0xff0000);
   near(bandStyle({ tone: 'base', opacity: 1.5 }).fillAlpha, 0.27);
 });
+
+test('boost tone: its own colour in both palettes, light fill', () => {
+  for (const palette of ['default', 'colorblind']) {
+    assert.equal(typeof PALETTES[palette].boost, 'number');
+    assert.equal(bandStyle({ tone: 'boost', palette }).fill, PALETTES[palette].boost);
+    assert.notEqual(PALETTES[palette].boost, PALETTES[palette].reach);
+  }
+  assert.ok(bandStyle({ tone: 'boost', index: 1 }).fillAlpha < bandStyle({ tone: 'base' }).fillAlpha);
+});

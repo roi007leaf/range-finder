@@ -155,40 +155,29 @@ test('rows with ghostTargets ghost those elements instead of the closest window'
   assert.deepEqual(calls[0][1].sourceEl.map(el => el.id), ['hud', 'sheet']);
 });
 
-const reachSpell = ctx => (ctx.item.uuid === 'Item.bow' ? { id: 'reach-spell', label: 'Reach Spell' } : null);
-
-test('Alt+click pins the adapter\'s per-use variant; plain click does not (spec rule 7)', () => {
+test('hold-key preview also starts when the pointer is over the 📏 itself', () => {
   const { doc, dom, triggers, calls } = setup();
-  triggers.adapter.altVariant = reachSpell;
   triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
-  const bow = doc.querySelector('[data-id="bow"] .range-finder-btn');
-  assert.equal(bow.dataset.tooltip, 'RANGE_FINDER.Button.Show · RANGE_FINDER.Button.Alt Reach Spell');
-  assert.equal(bow.getAttribute('data-range-finder-alt'), 'reach-spell');
-  assert.equal(doc.querySelector('[data-id="wish"] .range-finder-btn').hasAttribute('data-range-finder-alt'), false);
-  bow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, altKey: true }));
-  bow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
-  assert.equal(calls[0][1].variant, 'reach-spell');
-  assert.equal('variant' in calls[1][1], false);
-});
-
-test('hold-Alt preview: never over a variant 📏; an Alt press on it ends the preview until Alt is released', () => {
-  const { doc, dom, triggers, calls } = setup();
-  triggers.adapter.altVariant = reachSpell;
-  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
-  const row = doc.querySelector('[data-id="bow"]');
-  const button = row.querySelector('.range-finder-btn');
+  const button = doc.querySelector('[data-id="bow"] .range-finder-btn');
+  assert.equal(button.hasAttribute('data-range-finder-alt'), false);
   button.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
   triggers.keyDown();
-  assert.deepEqual(calls, [], 'pointer on the 📏: no preview');
-  row.querySelector('.name').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
   assert.deepEqual(calls.map(c => c[0]), ['preview']);
-  button.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, altKey: true }));
-  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview']);
-  row.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
-  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview'], 'the click wins');
+  assert.equal(calls[0][1].itemUuid, 'Item.bow');
   triggers.keyUp();
   triggers.keyDown();
-  assert.equal(calls.filter(c => c[0] === 'preview').length, 2, 'the next Alt press previews again');
+  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview', 'preview'], 'every key press previews again');
+});
+
+test('clicks never carry a variant, Alt held or not; no Alt attribute on any control', () => {
+  const { doc, dom, triggers, calls } = setup();
+  triggers.adapter.altVariant = () => ({ id: 'reach-spell', label: 'Reach Spell' });
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  const bow = doc.querySelector('[data-id="bow"] .range-finder-btn');
+  assert.equal(doc.querySelector('[data-range-finder-alt]'), null);
+  assert.doesNotMatch(bow.dataset.tooltip, /Alt/);
+  bow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, altKey: true }));
+  assert.equal('variant' in calls[0][1], false);
 });
 
 test('pinItem pins outside any row with an explicit source window; warns without a token', () => {
@@ -219,34 +208,6 @@ test('ghosted windows and their children are fully click-through (CSS rule prese
   const css = await readFile(new URL('../styles/range-finder.css', import.meta.url), 'utf8');
   assert.match(css, /\.range-finder-ghost,\s*\.range-finder-ghost \*\s*\{\s*pointer-events:\s*none\s*!important;/);
   assert.doesNotMatch(css, /data-range-finder-alt\]\s*\{\s*pointer-events:\s*auto/);
-});
-
-test('Alt+pointerdown on a variant 📏 mid-preview ends the preview, then the click pins the variant', () => {
-  const { doc, dom, triggers, calls } = setup();
-  triggers.adapter.altVariant = reachSpell;
-  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
-  const row = doc.querySelector('[data-id="bow"]');
-  const button = row.querySelector('.range-finder-btn');
-  row.querySelector('.name').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
-  triggers.keyDown();
-  assert.deepEqual(calls.map(c => c[0]), ['preview']);
-  button.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, altKey: true }));
-  button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, altKey: true }));
-  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview', 'toggle']);
-  assert.equal(calls[2][1].variant, 'reach-spell');
-});
-
-test('an Alt click made while the preview key is not held does not block the next preview', () => {
-  const { doc, dom, triggers, calls } = setup();
-  triggers.adapter.altVariant = reachSpell;
-  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
-  const button = doc.querySelector('[data-id="bow"] .range-finder-btn');
-  button.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, altKey: true }));
-  doc.querySelector('[data-id="wish"]').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
-  const normal = doc.querySelector('[data-id="bow"] .name');
-  normal.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
-  triggers.keyDown();
-  assert.deepEqual(calls.map(c => c[0]), ['preview']);
 });
 
 const hoverBow = (doc, dom) => doc.querySelector('[data-id="bow"]').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));

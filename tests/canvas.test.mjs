@@ -8,6 +8,7 @@ import { TargetBadges } from '../scripts/canvas/TargetBadges.mjs';
 import { pf2eAdapter } from '../scripts/adapters/pf2e.mjs';
 import { incrementBands, makeSpec, singleBand } from '../scripts/core/spec.mjs';
 import { Container, baseSettings, fakeGeo, fakePIXI } from './fake-pixi.mjs';
+import { PALETTES } from '../scripts/core/theme.mjs';
 
 const token = { id: 'src', cells: [{ i: 10, j: 10 }], center: { x: 1050, y: 1050 }, x: 1000, y: 1000, w: 100, h: 100 };
 const pin = (spec, extra = {}) => ({ key: 'me:src', userId: 'me', tokenId: 'src', itemUuid: 'Item.x', actionIndex: null, spec, shared: false, preview: false, sourceEl: null, ...extra });
@@ -266,4 +267,27 @@ test('badges: badgeAnchor "below" stacks downward from the token bottom; default
   const below = run({ ...base, badgeAnchor: 'below' });
   assert.ok(below[0] >= 550, 'first plate starts at/after the bottom edge');
   assert.ok(below[1] > below[0], 'second plate stacks further down');
+});
+
+const reachSpell = makeSpec({ kind: 'radius', bands: [...singleBand(30), { min: 30, max: 60, penalty: 0, tone: 'boost', label: 'Reach Spell · 60 ft', mark: 'Reach Spell' }], itemName: 'Electric Arc' });
+
+test('boost band: light fill, hatch and outline even in fill-only style; ring outlined on gridless', () => {
+  const { o, log, texts } = overlay({ ...baseSettings, bandStyle: 'fill' });
+  o.draw([{ pin: pin(reachSpell), token, adapter: pf2eAdapter, tint: null, ownerName: null }], fakeGeo());
+  assert.ok(log.some(c => c[0] === 'beginFill' && c[1] === PALETTES.default.boost));
+  assert.ok(log.some(c => c[0] === 'lineStyle' && c[1]?.color === PALETTES.default.boost), 'boost band outlined');
+  assert.ok(log.some(c => c[0] === 'lineStyle' && c[2] === PALETTES.default.boost), 'boost band hatched');
+  assert.deepEqual(texts, ['30 ft', 'Reach Spell · 60 ft']);
+  const rings = overlay({ ...baseSettings, bandStyle: 'fill' });
+  rings.o.draw([{ pin: pin(reachSpell), token, adapter: pf2eAdapter, tint: null, ownerName: null }], fakeGeo({ isSquare: false }));
+  assert.ok(rings.log.some(c => c[0] === 'lineStyle' && c[1]?.color === PALETTES.default.boost));
+});
+
+test('badges: a target in the boost ring shows the boost mark', () => {
+  const { PIXI } = fakePIXI();
+  const texts = [];
+  const badges = new TargetBadges({ parent: new Container(), PIXI, makeText: text => { texts.push(text); return new Container(); }, settings: () => baseSettings });
+  const goblin = { id: 'g', center: { x: 0, y: 0 }, x: 0, y: 0, w: 100, h: 100 };
+  badges.draw([{ pin: pin(reachSpell), token, adapter: { ...pf2eAdapter, distance: () => 45 }, tint: null, ownerName: null }], { targets: [goblin], zoom: 1 });
+  assert.deepEqual(texts, ['45 ft · Reach Spell']);
 });

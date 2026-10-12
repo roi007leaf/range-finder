@@ -41,10 +41,10 @@ Setup: square-grid scene, a PF2e character with longbow, dagger, whip, a fist (b
 - [ ] Touch Focus owned: with its toggle on, touch spells reach 30 ft (per the table entry); with it off they stay at touch reach.
 - [ ] Reach-N weapon with the Lunge toggle on: strike and Trip reach +5; without the toggle unchanged. Whip + Lunge: the system's value (not +10).
 - [ ] Far Shot longbow: bands to 1200 ft (system value), not 2400.
-- [ ] Reach Spell owned: spell 📏 tooltip says "Alt+click: with Reach Spell"; point at 📏, hold Alt, click → `Reach Spell 60 ft` for Electric Arc, 30 ft for Shocking Grasp; no preview started while pointing at the 📏; plain click shows the normal range. Second client sees the shared variant.
+- [ ] Reach Spell owned: Electric Arc shows `30 ft` plus a light hatched/outlined outer band `Reach Spell · 60 ft`; Shocking Grasp shows its touch band plus an outer band to 30 ft; a target at 45 ft badges `45 ft · Reach Spell`, one at 65 ft `✗`. Without Reach Spell the spell shows only its normal band. A second client sees the same bands on a shared pin.
 - [ ] Hold Alt over a pf2e-hud sidebar weapon, drag your token, release Alt → the sidebar reopens on the same tab.
-- [ ] Alt+click on a variant 📏 works while its window is faded (pin a range from the sheet, then Alt+click a variant 📏 on the faded sheet).
-- [ ] Galloping Launch / Throw and Catch Alt+click variants work on a melee weapon with thrown-N (e.g. a dagger or spear) as well as on thrown weapons.
+- [ ] Hold Alt with the pointer on a 📏 (not just the row) → the preview starts, for rows with and without boost bands.
+- [ ] Galloping Launch / Throw and Catch: a dagger (thrown-10) shows its thrown bands plus an outer `Galloping Launch · 150 ft` band; Giant's Lunge / Extending: a reach band plus an outer boost band (`Extending · Reach 60 ft`). Boost bands keep their outline in the Fill-only band style and use their own colour in the colorblind palette.
 - [ ] Token HUD 📏: list grouped Attacks / Spells / Skill actions / Other with range labels (`100/600 ft`, `Reach 10 ft`, `30 ft`); only items with a range or a note are listed; Wish is disabled with its note as tooltip; row click pins for *that* token (try two unlinked tokens of one actor); Shift+click shares; Alt held over a row previews; Esc and closing the HUD close the list; the list never fades.
 - [ ] Token HUD list follows the HUD: drag/move the token (or pan/zoom the canvas) with the list open — it stays attached to the HUD.
 - [ ] pf2e-hud: pinning from the open sidebar fades only that sidebar; the persistent bar stays until "Also hide PF2e HUD bar" is on (default off).

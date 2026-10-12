@@ -1,12 +1,9 @@
-/** Row buttons (click to pin, Shift+click to share, Alt+click for a per-use variant) and the hold-key hover preview. */
+/** Row buttons (click to pin, Shift+click to share) and the hold-key hover preview (over the row or its 📏). */
 import { hasRange, showsButton } from '../core/spec.mjs';
 
 export const WINDOW_SELECTOR = '.application, .app, .window-app';
 export const ROW_BUTTON_CLASS = 'range-finder-row-btn';
 const ROW_ATTR = 'data-range-finder-row';
-/** On controls whose Alt+click pins a variant (adapter.altVariant), e.g. "with Reach Spell". */
-const ALT_ATTR = 'data-range-finder-alt';
-const ALT_BUTTON = `.range-finder-btn[${ALT_ATTR}]`;
 const CONTROLS = `.range-finder-btn, .${ROW_BUTTON_CLASS}`;
 
 export class Triggers {
@@ -14,15 +11,11 @@ export class Triggers {
   #extraRows = [];
   #hovered = null;
   #keyHeld = false;
-  #overAlt = false;
-  #altClick = false;
   #restore = null;
 
   constructor({ adapter, pins, resolveToken, notify = () => {}, localize = key => key, settings = () => ({}), previewKey = () => null, doc = globalThis.document }) {
     Object.assign(this, { adapter, pins, resolveToken, notify, localize, settings, previewKey, doc });
     doc.addEventListener('pointerover', event => this.#onHover(event));
-    // Capture phase: runs before the click and before a preview could ghost the window.
-    doc.addEventListener('pointerdown', event => this.#onPointerDown(event), true);
   }
 
   /** Row definitions on top of the adapter's (e.g. the Token HUD list). */
@@ -50,10 +43,10 @@ export class Triggers {
       el.setAttribute(ROW_ATTR, '');
       if (def.wholeRow) {
         el.classList.add(ROW_BUTTON_CLASS);
-        this.#wire(el, el, spec, ctx);
+        this.#wire(el, el, spec);
       } else {
         const host = def.host?.(el) ?? el;
-        host.append(this.#button(el, spec, ctx, def));
+        host.append(this.#button(el, spec, def));
       }
     } catch (error) {
       console.error('Range Finder |', error);
@@ -61,17 +54,17 @@ export class Triggers {
   }
 
   /** A row definition may ask for a different element/classes so the button matches the sheet's own controls. */
-  #button(row, spec, ctx, def = {}) {
+  #button(row, spec, def = {}) {
     const button = this.doc.createElement(def.button?.tag ?? 'a');
     if (button.tagName === 'BUTTON') button.type = 'button';
     button.className = ['range-finder-btn', ...(def.button?.classes ?? [])].join(' ');
     button.innerHTML = '<i class="fa-solid fa-ruler-combined"></i>';
-    this.#wire(button, row, spec, ctx);
+    this.#wire(button, row, spec);
     return button;
   }
 
   /** Make `control` (a 📏 button or a whole list row) pin `row`'s range on click / Enter / Space. */
-  #wire(control, row, spec, ctx) {
+  #wire(control, row, spec) {
     control.setAttribute('role', 'button');
     control.setAttribute('tabindex', '0');
     const active = hasRange(spec);
@@ -79,21 +72,16 @@ export class Triggers {
       control.classList.add('is-disabled');
       control.setAttribute('aria-disabled', 'true');
     }
-    const alt = active ? this.adapter.altVariant?.(ctx) ?? null : null;
     let tooltip = active ? this.localize('RANGE_FINDER.Button.Show') : spec.note;
     // Mention the hold-to-preview key (it's rebindable; omitted when unbound).
     const key = active ? this.previewKey() : null;
     if (key) tooltip = `${tooltip} · ${this.localize('RANGE_FINDER.Button.Preview').replace('{key}', key)}`;
-    if (alt) {
-      control.setAttribute(ALT_ATTR, alt.id);
-      tooltip = `${tooltip} · ${this.localize('RANGE_FINDER.Button.Alt')} ${alt.label}`;
-    }
     control.dataset.tooltip = tooltip;
     control.setAttribute('aria-label', tooltip);
     const activate = event => {
       event.preventDefault();
       event.stopPropagation();
-      if (active) this.#toggle(row, event.shiftKey, event.altKey && alt ? alt.id : null);
+      if (active) this.#toggle(row, event.shiftKey);
     };
     control.addEventListener('click', activate);
     control.addEventListener('keydown', event => {
@@ -121,11 +109,11 @@ export class Triggers {
     return entry ? this.#requestFor(entry.ctx, entry.def, row, options) : null;
   }
 
-  #toggle(row, share, variant = null) {
+  #toggle(row, share) {
     try {
       const request = this.#request(row);
       if (!request) return;
-      this.pins.toggle({ ...request, share, ...(variant ? { variant } : {}) });
+      this.pins.toggle({ ...request, share });
       this.refresh();
     } catch (error) {
       console.error('Range Finder |', error);
@@ -133,11 +121,11 @@ export class Triggers {
   }
 
   /** Pin (or unpin) an item outside any row — e.g. from an item sheet's header. */
-  pinItem(ctx, { share = false, variant = null, sourceEl = null } = {}) {
+  pinItem(ctx, { share = false, sourceEl = null } = {}) {
     try {
       const request = this.#requestFor(ctx, { sourceEl: () => sourceEl }, null);
       if (!request) return null;
-      const result = this.pins.toggle({ ...request, share, ...(variant ? { variant } : {}) });
+      const result = this.pins.toggle({ ...request, share });
       this.refresh();
       return result;
     } catch (error) {
@@ -158,22 +146,13 @@ export class Triggers {
 
   #onHover(event) {
     const target = event.target;
-    this.#overAlt = Boolean(target?.closest?.(ALT_BUTTON));
     const row = target?.closest?.(`[${ROW_ATTR}]`) ?? null;
     this.#hovered = row && this.#rows.has(row) ? row : null;
     if (this.#keyHeld && this.#hovered) this.#startPreview();
   }
 
-  /** Alt+click on a variant control: the click wins over the hold-Alt preview. */
-  #onPointerDown(event) {
-    if (!event.altKey || !event.target?.closest?.(`[${ALT_ATTR}]`)) return;
-    if (!this.#keyHeld) return;
-    this.#altClick = true;
-    this.pins.endPreview();
-  }
-
   #startPreview() {
-    if (this.pins.previewing || this.#overAlt || this.#altClick || !this.#hovered?.isConnected) return;
+    if (this.pins.previewing || !this.#hovered?.isConnected) return;
     const request = this.#request(this.#hovered, { quiet: true });
     if (!request) return;
     this.#restore = null;
@@ -187,14 +166,12 @@ export class Triggers {
   }
 
   keyDown() {
-    if (!this.#keyHeld) this.#altClick = false;
     this.#keyHeld = true;
     this.#startPreview();
   }
 
   keyUp() {
     this.#keyHeld = false;
-    this.#altClick = false;
     this.pins.endPreview();
     const restore = this.#restore;
     this.#restore = null;

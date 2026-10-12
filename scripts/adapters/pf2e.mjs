@@ -1,7 +1,7 @@
 /** PF2e/SF2e adapter: item → RangeSpec, PF2e measuring rules, token distance. */
 import { alternatingDistance } from '../core/cells.mjs';
-import { incrementBands, makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
-import { adjustIncrement, adjustReach, adjustSpell, grantedThrown, perUseFor } from './pf2e-modifiers.mjs';
+import { MAX_INCREMENTS, incrementBands, makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
+import { adjustIncrement, adjustReach, adjustSpell, boostBands, grantedThrown, perUseBoosts } from './pf2e-modifiers.mjs';
 import { pf2eRows } from './pf2e-rows.mjs';
 import { skillActionItems, skillEntry, skillItem, skillSpec } from './pf2e-skills.mjs';
 import { sluggify, traitNumber, traitsOf } from './pf2e-util.mjs';
@@ -26,38 +26,52 @@ export function areaSuffix(item, fallback = 0) {
 }
 
 const withSuffix = (bands, suffix) => (suffix && bands.length ? [{ ...bands[0], label: `${bands[0].label} · ${suffix}` }, ...bands.slice(1)] : bands);
-const named = (name, label) => (label ? `${name} · ${label}` : name);
 
-function weaponSpec(actor, item, variant = null) {
+/** Outer bands for the actor's per-use boosts from `table`, past `from`; `measure(boost)` = { max, text } with that boost. */
+const boosted = (actor, item, table, from, measure) => boostBands(perUseBoosts(actor, item, table).map(boost => ({ label: boost.label, ...measure(boost) })), from);
+
+function weaponSpec(actor, item) {
   const name = item.name ?? '';
   const range = item.range ?? null;
   const overlays = [];
   const volley = traitNumber(item, 'volley');
   if (volley) overlays.push({ min: 0, max: volley, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2' });
   const melee = item.isMelee ?? !range;
+  const thrownBoosts = (increment, from) => boosted(actor, item, 'weapon', from, boost => {
+    const max = adjustIncrement(increment, { actor, weapon: item, boost: boost.id }) * MAX_INCREMENTS;
+    return { max, text: `${boost.label} · ${max} ft` };
+  });
   if (melee) {
-    const { reach, label } = adjustReach(actor?.getReach?.({ action: 'attack', weapon: item }) || 5, { actor, weapon: item, variant });
-    const reachBand = { min: 0, max: reach, penalty: 0, tone: 'reach', label: label ? `${label} · Reach ${reach} ft` : `Reach ${reach} ft` };
+    const raw = actor?.getReach?.({ action: 'attack', weapon: item }) || 5;
+    const reach = adjustReach(raw, { actor, weapon: item });
+    const reachBand = { min: 0, max: reach, penalty: 0, tone: 'reach', label: `Reach ${reach} ft` };
+    const reachBoosts = boosted(actor, item, 'reach', reach, boost => {
+      const max = adjustReach(raw, { actor, weapon: item, boost: boost.id });
+      return { max, text: `${boost.label} · Reach ${max} ft` };
+    });
     const suffix = areaSuffix(item, reach);
     // Real PF2e melee weapons have range null; a thrown melee weapon carries its increment in a thrown-N trait.
     const native = traitNumber(item, 'thrown') ?? (range?.increment || null);
-    const adjusted = native ? adjustIncrement(native, { actor, weapon: item, variant }) : null;
-    const thrown = adjusted ? adjusted.increment : grantedThrown(actor, item) || null;
-    if (thrown) return makeSpec({ kind: 'increments', bands: withSuffix(incrementBands(thrown, thrown * 6), suffix), overlays: [reachBand, ...overlays], itemName: named(name, label ?? adjusted?.label) });
-    return makeSpec({ kind: 'reach', bands: withSuffix([reachBand], suffix), overlays, itemName: named(name, label) });
+    const thrown = native ? adjustIncrement(native, { actor, weapon: item }) : grantedThrown(actor, item) || null;
+    if (thrown) {
+      const bands = incrementBands(thrown, thrown * MAX_INCREMENTS);
+      const extra = native ? thrownBoosts(native, bands.at(-1).max) : [];
+      return makeSpec({ kind: 'increments', bands: [...withSuffix(bands, suffix), ...extra], overlays: [reachBand, ...reachBoosts, ...overlays], itemName: name });
+    }
+    return makeSpec({ kind: 'reach', bands: [...withSuffix([reachBand], suffix), ...reachBoosts], overlays, itemName: name });
   }
   const suffix = areaSuffix(item);
   if (range?.increment) {
-    const { increment, label } = adjustIncrement(range.increment, { actor, weapon: item, variant });
-    const max = increment === range.increment ? range.max ?? increment * 6 : increment * 6;
+    const increment = adjustIncrement(range.increment, { actor, weapon: item });
+    const max = increment === range.increment ? range.max ?? increment * MAX_INCREMENTS : increment * MAX_INCREMENTS;
     const bands = incrementBands(increment, max);
-    if (bands.length) return makeSpec({ kind: 'increments', bands: withSuffix(bands, suffix), overlays, itemName: named(name, label) });
+    if (bands.length) return makeSpec({ kind: 'increments', bands: [...withSuffix(bands, suffix), ...thrownBoosts(range.increment, bands.at(-1).max)], overlays, itemName: name });
   }
   if (range?.max > 0) return makeSpec({ kind: 'radius', bands: withSuffix(singleBand(range.max), suffix), overlays, itemName: name });
   return noneSpec('Range: —', name);
 }
 
-function spellSpec(actor, spell, variant = null) {
+function spellSpec(actor, spell) {
   const name = spell.name ?? '';
   const raw = String(spell.system?.range?.value ?? '').trim();
   const slug = sluggify(raw);
@@ -65,11 +79,15 @@ function spellSpec(actor, spell, variant = null) {
   const base = slug === 'touch' ? { kind: 'touch', feet: actor?.system?.attributes?.reach?.base ?? 5 }
     : feet ? { kind: 'feet', feet: Number(feet[1]) } : null;
   if (base) {
-    const range = adjustSpell(base, { actor, spell, variant });
+    const range = adjustSpell(base, { actor, spell });
     const overlays = range.overlay ? [range.overlay] : [];
-    const itemName = named(name, range.label);
-    if (range.kind === 'touch') return makeSpec({ kind: 'reach', bands: singleBand(range.feet, 'reach', `Touch · ${range.feet} ft`), overlays, itemName });
-    return makeSpec({ kind: 'radius', bands: singleBand(range.feet, 'base', range.label ? `${range.label} ${range.feet} ft` : `${range.feet} ft`), overlays, itemName });
+    // Reach Spell and the like: an outer band for "only when cast with the boost".
+    const extra = boosted(actor, spell, 'spell', range.feet, boost => {
+      const max = adjustSpell(base, { actor, spell, boost: boost.id }).feet;
+      return { max, text: `${boost.label} · ${max} ft` };
+    });
+    if (range.kind === 'touch') return makeSpec({ kind: 'reach', bands: [...singleBand(range.feet, 'reach', `Touch · ${range.feet} ft`), ...extra], overlays, itemName: name });
+    return makeSpec({ kind: 'radius', bands: [...singleBand(range.feet, 'base'), ...extra], overlays, itemName: name });
   }
   const area = spell.system?.area;
   if (!raw && area?.type === 'emanation' && Number(area.value) > 0) {
@@ -90,25 +108,20 @@ function strikeItem(actor, actionIndex, item) {
   return actions.find(action => action?.item && action.item.id === item.id)?.item ?? item;
 }
 
-export function specFor({ actor, item, actionIndex = null, variant = null }) {
+export function specFor({ actor, item, actionIndex = null }) {
   if (actionIndex !== null && actionIndex !== undefined) item = strikeItem(actor, actionIndex, item);
   if (!item) return noneSpec();
-  if (item.type === 'spell') return spellSpec(actor, item, variant);
-  if (item.type === 'weapon' || item.type === 'melee') return weaponSpec(actor, item, variant);
+  if (item.type === 'spell') return spellSpec(actor, item);
+  if (item.type === 'weapon' || item.type === 'melee') return weaponSpec(actor, item);
   const entry = skillEntry(item);
   if (entry) return skillSpec(actor, entry, item.name ?? entry.name);
   return noneSpec(null, item.name ?? '');
 }
 
-/** Alt+click variant for a row: the first per-use range modifier the actor has for it. */
-export function altVariant({ actor, item, actionIndex = null } = {}) {
-  if (actionIndex !== null && actionIndex !== undefined) item = strikeItem(actor, actionIndex, item);
-  return perUseFor(actor, item);
-}
+/** A boost band ending at 10 ft is a boosted reach (Giant's Lunge…): it gets the double diagonal too. */
+const isReach10 = band => (band?.tone === 'reach' || band?.tone === 'boost') && band.max === 10;
 
-const isReach10 = band => band?.tone === 'reach' && band.max === 10;
-
-/** PF2e: alternating diagonals; reach exactly 10 also covers the 15 ft double diagonal. */
+/** PF2e: alternating diagonals; reach exactly 10 (base or boosted) also covers the 15 ft double diagonal. */
 export function cellMeasure(_spec, unit = 5) {
   const measure = (from, to, band) => {
     if (isReach10(band) && Math.abs(from.i - to.i) === 2 && Math.abs(from.j - to.j) === 2) return 10;
@@ -157,4 +170,4 @@ export function listItems(actor) {
   return out;
 }
 
-export const pf2eAdapter = { id: 'pf2e', specFor, altVariant, cellMeasure, distance, resolveItem, listItems, rows: pf2eRows };
+export const pf2eAdapter = { id: 'pf2e', specFor, cellMeasure, distance, resolveItem, listItems, rows: pf2eRows };

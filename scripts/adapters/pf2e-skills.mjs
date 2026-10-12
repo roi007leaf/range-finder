@@ -51,7 +51,7 @@ function maneuverSpec(actor, rule, name) {
   for (const weapon of equippedWeapons(actor)) {
     if (weapon.isMelee === false || !traitsOf(weapon).includes(rule.trait)) continue;
     const raw = actor?.getReach?.({ action: 'attack', weapon }) || baseReach(actor);
-    reach = Math.max(reach, LUNGE_MANEUVERS.has(rule.trait) ? adjustReach(raw, { actor, weapon }).reach : raw);
+    reach = Math.max(reach, LUNGE_MANEUVERS.has(rule.trait) ? adjustReach(raw, { actor, weapon }) : raw);
   }
   const bands = [reachBand(reach, `Reach ${reach} ft`)];
   const ranged = rule.rangedTrait ? equippedWeapons(actor).find(w => traitsOf(w).includes(rule.rangedTrait) && w.range?.increment > reach) : null;
