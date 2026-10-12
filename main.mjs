@@ -5,10 +5,11 @@ import { makeText, sceneGeometry, sceneUnits } from './scripts/canvas/geometry.m
 import { MODULE_ID, readSettings, registerSettings } from './scripts/settings.mjs';
 import { Ghost } from './scripts/ui/Ghost.mjs';
 import { PinManager } from './scripts/ui/PinManager.mjs';
+import { TokenHudList } from './scripts/ui/TokenHudList.mjs';
 import { Triggers } from './scripts/ui/Triggers.mjs';
 
 const SOCKET = `module.${MODULE_ID}`;
-let adapter, pins, ghost, triggers, overlay, badges;
+let adapter, pins, ghost, triggers, overlay, badges, hudList;
 let frame = null;
 const dragging = new Map();
 const report = error => console.error('Range Finder |', error);
@@ -159,6 +160,12 @@ Hooks.once('ready', () => {
     localize: key => game.i18n.localize(key),
     settings: readSettings
   });
+  hudList = new TokenHudList({
+    adapter, triggers,
+    localize: key => game.i18n.localize(key),
+    units: () => sceneUnits(),
+    enabled: () => readSettings().tokenHudButton
+  });
   document.documentElement.style.setProperty('--range-finder-user', game.user.color?.css ?? '#2ec4b6');
   // Foundry relays the sender's user id as the listener's second argument; trust it over message.userId.
   game.socket.on(SOCKET, (message, senderId) => {
@@ -175,6 +182,7 @@ Hooks.once('ready', () => {
 
 Hooks.on('canvasReady', setupCanvas);
 Hooks.on('canvasTearDown', () => {
+  hudList?.close();
   pins?.reset();
   ghost?.releaseAll();
   overlay?.destroy();
@@ -182,6 +190,11 @@ Hooks.on('canvasTearDown', () => {
   overlay = badges = null;
   dragging.clear();
 });
+
+Hooks.on('renderTokenHUD', (app, html) => {
+  try { hudList?.attach(app, rootOf(html, app)); } catch (error) { report(error); }
+});
+Hooks.on('closeTokenHUD', () => hudList?.close());
 
 // Foundry v14: drag previews are Token clones; `isPreview` (PlaceableObject getter) is true and `_original`
 // is the real token. The preview's document x/y is updated live while dragging.

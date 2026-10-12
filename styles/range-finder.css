@@ -33,3 +33,21 @@
 .actor.npc.sheet form ol.spell-list:has(.range-finder-btn) > li { --controls-width: 4.75rem; }
 /* Character inventory rows also use a fixed-width controls strip. */
 .actor.sheet section.window-content .inventory :is(.inventory-list, ul.items):has(.range-finder-btn) .item-controls { flex-basis: 7.25rem; }
+/* Token HUD popover (appended to <body>, next to #token-hud). */
+#token-hud .range-finder-hud-btn[aria-expanded="true"] { color: #2ec4b6; box-shadow: 0 0 6px rgb(46 196 182 / 60%); }
+.range-finder-hud-list {
+  position: fixed; z-index: 100; min-width: 220px; max-width: 320px; max-height: 60vh; overflow-y: auto;
+  padding: 6px; border-radius: 8px; background: rgb(11 15 20 / 92%); border: 1px solid rgb(46 196 182 / 45%);
+  box-shadow: 0 4px 16px rgb(0 0 0 / 50%); color: #e6edf3; font-size: 13px;
+}
+.range-finder-hud-list h4 { margin: 6px 4px 2px; border: none; font-size: .75em; text-transform: uppercase; letter-spacing: .05em; color: #9aa4ad; }
+.range-finder-hud-list ol { list-style: none; margin: 0; padding: 0; }
+.range-finder-hud-row { display: flex; align-items: center; gap: 6px; padding: 3px 6px; border-radius: 4px; cursor: pointer; }
+.range-finder-hud-row img { width: 20px; height: 20px; border: none; flex: 0 0 auto; }
+.range-finder-hud-row .name { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.range-finder-hud-row .range { flex: 0 0 auto; color: #9aa4ad; font-size: .85em; }
+.range-finder-hud-row:hover, .range-finder-hud-row:focus-visible { background: rgb(46 196 182 / 14%); outline: none; }
+.range-finder-hud-row.is-active { background: rgb(46 196 182 / 22%); box-shadow: inset 2px 0 0 #2ec4b6; }
+.range-finder-hud-row.is-shared { box-shadow: inset 2px 0 0 var(--range-finder-user, #2ec4b6); }
+.range-finder-hud-row.is-disabled { opacity: .5; cursor: help; }
+.range-finder-hud-empty { margin: 4px 6px; color: #9aa4ad; }

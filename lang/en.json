@@ -4,6 +4,16 @@
       "Show": "Show range (Shift+click to share)",
       "Alt": "Alt+click: with"
     },
+    "Hud": {
+      "Button": "Ranges",
+      "Empty": "Nothing with a range.",
+      "Groups": {
+        "attacks": "Attacks",
+        "spells": "Spells",
+        "skills": "Skill actions",
+        "other": "Other"
+      }
+    },
     "Notify": {
       "NoToken": "Range Finder: this actor has no token on the current scene."
     },
@@ -82,6 +92,10 @@
       "rangeField": {
         "Name": "Range Finder: range field (other systems)",
         "Hint": "Item data path holding the range, e.g. system.range.value. A number, or { value, long }. Leave empty to auto-detect system.range. Not used by PF2e, SF2e or D&D 5e."
+      },
+      "tokenHudButton": {
+        "Name": "Range Finder: Token HUD button",
+        "Hint": "Show a 📏 button on the Token HUD that lists the token's ranges."
       }
     }
   }

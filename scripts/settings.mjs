@@ -13,7 +13,8 @@ export const SETTINGS = {
   ghostPersistentHud: { scope: 'client', type: Boolean, default: false },
   allowSharing: { scope: 'world', type: Boolean, default: true },
   badgesCombatOnly: { scope: 'world', type: Boolean, default: false },
-  rangeField: { scope: 'world', type: String, default: '' }
+  rangeField: { scope: 'world', type: String, default: '' },
+  tokenHudButton: { scope: 'client', type: Boolean, default: true }
 };
 
 // Foundry localizes setting names, hints and choices itself, so the default localize is the identity.

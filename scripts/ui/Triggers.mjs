@@ -2,13 +2,16 @@
 import { hasRange, showsButton } from '../core/spec.mjs';
 
 export const WINDOW_SELECTOR = '.application, .app, .window-app';
+export const ROW_BUTTON_CLASS = 'range-finder-row-btn';
 const ROW_ATTR = 'data-range-finder-row';
 /** On controls whose Alt+click pins a variant (adapter.altVariant), e.g. "with Reach Spell". */
 const ALT_ATTR = 'data-range-finder-alt';
 const ALT_BUTTON = `.range-finder-btn[${ALT_ATTR}]`;
+const CONTROLS = `.range-finder-btn, .${ROW_BUTTON_CLASS}`;
 
 export class Triggers {
   #rows = new WeakMap();
+  #extraRows = [];
   #hovered = null;
   #keyHeld = false;
   #overAlt = false;
@@ -21,9 +24,14 @@ export class Triggers {
     doc.addEventListener('pointerdown', event => this.#onPointerDown(event), true);
   }
 
+  /** Row definitions on top of the adapter's (e.g. the Token HUD list). */
+  addRows(defs) {
+    this.#extraRows.push(...defs);
+  }
+
   decorate(root, app, hookName) {
     if (!root?.querySelectorAll) return;
-    for (const def of this.adapter.rows ?? []) {
+    for (const def of [...(this.adapter.rows ?? []), ...this.#extraRows]) {
       if (hookName && def.hooks && !def.hooks.includes(hookName)) continue;
       for (const el of root.querySelectorAll(def.selector)) this.#decorateRow(el, def, app);
     }
@@ -39,8 +47,13 @@ export class Triggers {
       if (!showsButton(spec)) return;
       this.#rows.set(el, { ctx, def });
       el.setAttribute(ROW_ATTR, '');
-      const host = def.host?.(el) ?? el;
-      host.append(this.#button(el, spec, ctx));
+      if (def.wholeRow) {
+        el.classList.add(ROW_BUTTON_CLASS);
+        this.#wire(el, el, spec, ctx);
+      } else {
+        const host = def.host?.(el) ?? el;
+        host.append(this.#button(el, spec, ctx));
+      }
     } catch (error) {
       console.error('Range Finder |', error);
     }
@@ -54,7 +67,7 @@ export class Triggers {
     return button;
   }
 
-  /** Make `control` pin `row`'s range on click / Enter / Space (Shift shares, Alt picks the variant). */
+  /** Make `control` (a 📏 button or a whole list row) pin `row`'s range on click / Enter / Space. */
   #wire(control, row, spec, ctx) {
     control.setAttribute('role', 'button');
     control.setAttribute('tabindex', '0');
@@ -82,19 +95,24 @@ export class Triggers {
     });
   }
 
-  #request(row, { quiet = false } = {}) {
-    const entry = this.#rows.get(row);
-    if (!entry) return null;
-    const token = this.resolveToken(entry.ctx.actor);
+  /** ctx.token (e.g. the Token HUD's token) wins over the actor's controlled / first active token. */
+  #requestFor(ctx, def, row, { quiet = false } = {}) {
+    const token = ctx.token ?? this.resolveToken(ctx.actor);
     if (!token) {
       if (!quiet) this.notify(this.localize('RANGE_FINDER.Notify.NoToken'));
       return null;
     }
     const includeBar = Boolean(this.settings().ghostPersistentHud);
     let sourceEl;
-    if (entry.def.ghostTargets) sourceEl = entry.def.ghostTargets(row, { includeBar }).filter(Boolean);
-    else sourceEl = !entry.def.persistentHud || includeBar ? row.closest(WINDOW_SELECTOR) : null;
-    return { tokenId: token.id, itemUuid: entry.ctx.item.uuid, actionIndex: entry.ctx.actionIndex ?? null, sourceEl };
+    if (def.sourceEl) sourceEl = def.sourceEl(row);
+    else if (def.ghostTargets) sourceEl = def.ghostTargets(row, { includeBar }).filter(Boolean);
+    else sourceEl = !def.persistentHud || includeBar ? row?.closest?.(WINDOW_SELECTOR) ?? null : null;
+    return { tokenId: token.id, itemUuid: ctx.item.uuid, actionIndex: ctx.actionIndex ?? null, sourceEl };
+  }
+
+  #request(row, options) {
+    const entry = this.#rows.get(row);
+    return entry ? this.#requestFor(entry.ctx, entry.def, row, options) : null;
   }
 
   #toggle(row, share, variant = null) {
@@ -108,13 +126,27 @@ export class Triggers {
     }
   }
 
+  /** Pin (or unpin) an item outside any row — e.g. from an item sheet's header. */
+  pinItem(ctx, { share = false, variant = null, sourceEl = null } = {}) {
+    try {
+      const request = this.#requestFor(ctx, { sourceEl: () => sourceEl }, null);
+      if (!request) return null;
+      const result = this.pins.toggle({ ...request, share, ...(variant ? { variant } : {}) });
+      this.refresh();
+      return result;
+    } catch (error) {
+      console.error('Range Finder |', error);
+      return null;
+    }
+  }
+
   refresh(root = this.doc) {
-    for (const button of root.querySelectorAll?.('.range-finder-btn') ?? []) {
-      const row = button.closest(`[${ROW_ATTR}]`);
+    for (const control of root.querySelectorAll?.(CONTROLS) ?? []) {
+      const row = control.closest(`[${ROW_ATTR}]`);
       const request = row ? this.#request(row, { quiet: true }) : null;
       const pin = request ? this.pins.pinFor(request) : null;
-      button.classList.toggle('is-active', Boolean(pin));
-      button.classList.toggle('is-shared', Boolean(pin?.shared));
+      control.classList.toggle('is-active', Boolean(pin));
+      control.classList.toggle('is-shared', Boolean(pin?.shared));
     }
   }
 

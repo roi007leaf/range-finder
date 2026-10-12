@@ -190,3 +190,26 @@ test('hold-Alt preview: never over a variant 📏; an Alt press on it ends the p
   triggers.keyDown();
   assert.equal(calls.filter(c => c[0] === 'preview').length, 2, 'the next Alt press previews again');
 });
+
+test('pinItem pins outside any row with an explicit source window; warns without a token', () => {
+  const { triggers, calls } = setup();
+  const sheet = { id: 'item-sheet' };
+  assert.equal(triggers.pinItem({ actor: { id: 'a1' }, item: { uuid: 'Item.bow' }, actionIndex: null }, { share: true, sourceEl: sheet }), 'pinned');
+  assert.deepEqual(calls[0][1], { tokenId: 't1', itemUuid: 'Item.bow', actionIndex: null, sourceEl: sheet, share: true });
+  const none = setup({ token: null });
+  assert.equal(none.triggers.pinItem({ actor: {}, item: { uuid: 'Item.bow' } }), null);
+  assert.deepEqual(none.notes, ['RANGE_FINDER.Notify.NoToken']);
+});
+
+test('whole-row controls via addRows: the row is the button and carries the active state', () => {
+  const { doc, dom, triggers, calls } = setup();
+  const sheetRow = triggers.adapter.rows[0];
+  triggers.addRows([{ ...sheetRow, hooks: ['renderList'], wholeRow: true, ghostTargets: () => [] }]);
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderList');
+  const bow = doc.querySelector('[data-id="bow"]');
+  assert.ok(bow.classList.contains('range-finder-row-btn'));
+  assert.equal(bow.querySelector('.range-finder-btn'), null);
+  bow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  assert.deepEqual(calls[0][1].sourceEl, []);
+  assert.ok(bow.classList.contains('is-active'));
+});
