@@ -1,7 +1,8 @@
 {
   "RANGE_FINDER": {
     "Button": {
-      "Show": "Show range (Shift+click to share)"
+      "Show": "Show range (Shift+click to share)",
+      "Alt": "Alt+click: with"
     },
     "Notify": {
       "NoToken": "Range Finder: this actor has no token on the current scene."

@@ -154,3 +154,39 @@ test('rows with ghostTargets ghost those elements instead of the closest window'
   doc.querySelector('.slot .range-finder-btn').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
   assert.deepEqual(calls[0][1].sourceEl.map(el => el.id), ['hud', 'sheet']);
 });
+
+const reachSpell = ctx => (ctx.item.uuid === 'Item.bow' ? { id: 'reach-spell', label: 'Reach Spell' } : null);
+
+test('Alt+click pins the adapter\'s per-use variant; plain click does not (spec rule 7)', () => {
+  const { doc, dom, triggers, calls } = setup();
+  triggers.adapter.altVariant = reachSpell;
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  const bow = doc.querySelector('[data-id="bow"] .range-finder-btn');
+  assert.equal(bow.dataset.tooltip, 'RANGE_FINDER.Button.Show · RANGE_FINDER.Button.Alt Reach Spell');
+  assert.equal(bow.getAttribute('data-range-finder-alt'), 'reach-spell');
+  assert.equal(doc.querySelector('[data-id="wish"] .range-finder-btn').hasAttribute('data-range-finder-alt'), false);
+  bow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, altKey: true }));
+  bow.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  assert.equal(calls[0][1].variant, 'reach-spell');
+  assert.equal('variant' in calls[1][1], false);
+});
+
+test('hold-Alt preview: never over a variant 📏; an Alt press on it ends the preview until Alt is released', () => {
+  const { doc, dom, triggers, calls } = setup();
+  triggers.adapter.altVariant = reachSpell;
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  const row = doc.querySelector('[data-id="bow"]');
+  const button = row.querySelector('.range-finder-btn');
+  button.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+  triggers.keyDown();
+  assert.deepEqual(calls, [], 'pointer on the 📏: no preview');
+  row.querySelector('.name').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+  assert.deepEqual(calls.map(c => c[0]), ['preview']);
+  button.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, altKey: true }));
+  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview']);
+  row.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview'], 'the click wins');
+  triggers.keyUp();
+  triggers.keyDown();
+  assert.equal(calls.filter(c => c[0] === 'preview').length, 2, 'the next Alt press previews again');
+});

@@ -32,7 +32,7 @@ function appForElement(el) {
   return foundry.applications.instances?.get(el.id) ?? ui.windows?.[el.dataset?.appid] ?? null;
 }
 
-function build({ tokenId, itemUuid, actionIndex }) {
+function build({ tokenId, itemUuid, actionIndex, variant = null }) {
   try {
     const token = canvas.tokens?.get(tokenId);
     let item = null;
@@ -41,7 +41,7 @@ function build({ tokenId, itemUuid, actionIndex }) {
       item ??= adapter.resolveItem?.(token?.actor, itemUuid) ?? null;
     }
     if (!token?.actor || (!item && actionIndex == null)) return null;
-    return adapter.specFor({ actor: token.actor, token, item, actionIndex, units: sceneUnits() });
+    return adapter.specFor({ actor: token.actor, token, item, actionIndex, variant, units: sceneUnits() });
   } catch (error) {
     report(error);
     return null;

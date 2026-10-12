@@ -170,3 +170,25 @@ test('shift+click on an unshared pin shares it; plain click still unpins (final 
   plain.pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow' });
   assert.equal(plain.pins.toggle({ tokenId: 't1', itemUuid: 'Item.bow' }), 'unpinned');
 });
+
+test('variant pins (Alt+click) are distinct, broadcast their variant, keep the button active', () => {
+  const builds = [];
+  const { pins, sent } = setup();
+  pins.build = request => { builds.push(request); return makeSpec({ kind: 'radius', bands: singleBand(request.variant ? 60 : 30) }); };
+  assert.equal(pins.toggle({ tokenId: 't1', itemUuid: 'Item.arc', variant: 'reach-spell', share: true }), 'pinned');
+  assert.equal(pins.all()[0].spec.bands[0].max, 60);
+  assert.deepEqual(builds.at(-1), { tokenId: 't1', itemUuid: 'Item.arc', actionIndex: null, variant: 'reach-spell' });
+  assert.deepEqual(sent.at(-1), { action: 'pin', userId: 'me', tokenId: 't1', itemUuid: 'Item.arc', actionIndex: null, variant: 'reach-spell' });
+  assert.ok(pins.pinFor({ tokenId: 't1', itemUuid: 'Item.arc', actionIndex: null }), 'button active whatever the variant');
+  assert.equal(pins.toggle({ tokenId: 't1', itemUuid: 'Item.arc' }), 'pinned', 'plain click switches to the plain range');
+  assert.equal(pins.all()[0].spec.bands[0].max, 30);
+  assert.equal(pins.toggle({ tokenId: 't1', itemUuid: 'Item.arc' }), 'unpinned');
+});
+
+test('receive rebuilds a shared variant pin', () => {
+  const { pins } = setup();
+  pins.build = request => makeSpec({ kind: 'radius', bands: singleBand(request.variant ? 60 : 30) });
+  pins.receive({ action: 'pin', userId: 'ally', tokenId: 't2', itemUuid: 'Item.arc', actionIndex: null, variant: 'reach-spell' });
+  assert.equal(pins.all()[0].variant, 'reach-spell');
+  assert.equal(pins.all()[0].spec.bands[0].max, 60);
+});
