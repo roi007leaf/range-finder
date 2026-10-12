@@ -11,10 +11,11 @@ const defaultFrame = () => (typeof globalThis.requestAnimationFrame === 'functio
 
 const LABEL_FONT = 13;
 
-/** Screen-constant label size: inverse of the canvas zoom, clamped to [0.5, 3]. */
+/** Screen-constant label size: inverse of the canvas zoom. Scenes with large grids (e.g. 296 px) sit at
+ *  zoom ~0.1–0.2, so the clamp is wide; it only guards against degenerate zoom values. */
 export function labelScale(zoom = 1) {
   const z = Number(zoom) > 0 ? Number(zoom) : 1;
-  return Math.min(3, Math.max(0.5, 1 / z));
+  return Math.min(12, Math.max(0.25, 1 / z));
 }
 
 export class RangeOverlay {
