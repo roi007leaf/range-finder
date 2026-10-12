@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import { RangeOverlay } from '../scripts/canvas/RangeOverlay.mjs';
-import { faFamily, fontFamilyOf, sceneGeometry } from '../scripts/canvas/geometry.mjs';
+import { faFamily, fontFamilyOf, sceneGeometry, sceneUnits } from '../scripts/canvas/geometry.mjs';
 import { bandCells } from '../scripts/core/cells.mjs';
 import { TargetBadges } from '../scripts/canvas/TargetBadges.mjs';
 import { pf2eAdapter } from '../scripts/adapters/pf2e.mjs';
@@ -204,4 +204,20 @@ test('badge glyph uses an escape, x and y share the target center (final 9)', as
   badges.draw([{ pin: pin(javelin), token, adapter: { ...pf2eAdapter, distance: () => 20 }, tint: null, ownerName: null }], { targets: [goblin], zoom: 1 });
   const plate = badges.container.children[0];
   assert.ok(plate.position.y < 500 && plate.position.y > 400, `plate y ${plate.position.y} follows center`);
+});
+
+test('badges use the band mark and the scene units', () => {
+  const { PIXI } = fakePIXI();
+  const texts = [];
+  const badges = new TargetBadges({ parent: new Container(), PIXI, makeText: text => { texts.push(text); return new Container(); }, settings: () => baseSettings });
+  const bow = makeSpec({ kind: 'increments', bands: [...singleBand(45, 'base', null, 'm'), { min: 45, max: 180, penalty: 0, tone: 'increment', label: '180 m · Disadv.', mark: 'Disadv.' }] });
+  const goblin = { id: 'g', center: { x: 0, y: 0 }, x: 0, y: 0, w: 100, h: 100 };
+  badges.draw([{ pin: pin(bow), token, adapter: { ...pf2eAdapter, distance: () => 60 }, tint: null, ownerName: null }], { targets: [goblin], zoom: 1, units: 'm' });
+  assert.ok(texts.includes('60 m · Disadv.'));
+});
+
+test('sceneUnits reads Scene#grid.units with an ft fallback', () => {
+  assert.equal(sceneUnits({ scene: { grid: { units: 'm' } } }), 'm');
+  assert.equal(sceneUnits({ scene: { grid: { units: '' } } }), 'ft');
+  assert.equal(sceneUnits(null), 'ft');
 });

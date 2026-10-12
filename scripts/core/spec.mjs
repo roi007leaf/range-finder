@@ -17,7 +17,9 @@ export function bandIndexFor(bands, distance) {
   return bands.findIndex(band => inBand(band, distance));
 }
 
-export function incrementBands(increment, max = increment * MAX_INCREMENTS) {
+export const DEFAULT_UNITS = 'ft';
+
+export function incrementBands(increment, max = increment * MAX_INCREMENTS, units = DEFAULT_UNITS) {
   const bands = [];
   if (!(increment > 0) || !(max > 0)) return bands;
   for (let k = 0; k < MAX_INCREMENTS; k++) {
@@ -27,19 +29,23 @@ export function incrementBands(increment, max = increment * MAX_INCREMENTS) {
     const penalty = k === 0 ? 0 : -2 * k;
     bands.push({
       min, max: end, penalty, tone: k === 0 ? 'base' : 'increment',
-      label: penalty ? `${end} ft · ${fmtPenalty(penalty)}` : `${end} ft`
+      label: penalty ? `${end} ${units} · ${fmtPenalty(penalty)}` : `${end} ${units}`
     });
   }
   return bands;
 }
 
-export function singleBand(max, tone = 'base', label = `${max} ft`) {
-  return [{ min: 0, max, penalty: 0, tone, label }];
+/** One band from 0. `label` defaults to "{max} {units}". */
+export function singleBand(max, tone = 'base', label = null, units = DEFAULT_UNITS) {
+  return [{ min: 0, max, penalty: 0, tone, label: label ?? `${max} ${units}` }];
 }
+
+/** Optional per-band badge mark (e.g. dnd5e "Disadv."); replaces check / penalty on target badges. */
+const validMark = mark => mark === undefined || mark === null || typeof mark === 'string';
 
 function validBand(band) {
   return Boolean(band) && Number.isFinite(band.min) && Number.isFinite(band.max) && band.min >= 0 && band.max > band.min
-    && Number.isFinite(band.penalty) && TONES.includes(band.tone) && typeof band.label === 'string';
+    && Number.isFinite(band.penalty) && TONES.includes(band.tone) && typeof band.label === 'string' && validMark(band.mark);
 }
 
 export function makeSpec({ kind, bands = [], overlays = [], note = null, itemName = '' } = {}) {
@@ -59,3 +65,12 @@ export const noneSpec = (note = null, itemName = '') => makeSpec({ kind: 'none',
 export const hasRange = spec => Boolean(spec && spec.kind !== 'none' && spec.bands.length);
 export const showsButton = spec => Boolean(spec && (hasRange(spec) || spec.note));
 export const maxRange = spec => Math.max(0, ...[...(spec?.bands ?? []), ...(spec?.overlays ?? [])].map(band => band.max));
+
+/** Short label for list rows: "80/320 ft", "Reach 10 ft", "30 ft", or the note. */
+export function rangeLabel(spec, units = DEFAULT_UNITS) {
+  if (!spec) return '';
+  if (!hasRange(spec)) return spec.note ?? '';
+  const first = spec.bands[0], last = spec.bands.at(-1);
+  if (spec.kind === 'increments' && spec.bands.length > 1) return `${first.max}/${last.max} ${units}`;
+  return first.label || `${first.max} ${units}`;
+}

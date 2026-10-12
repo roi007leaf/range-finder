@@ -1,7 +1,7 @@
 import { getAdapter, registerAdapter } from './scripts/adapters/index.mjs';
 import { RangeOverlay } from './scripts/canvas/RangeOverlay.mjs';
 import { TargetBadges } from './scripts/canvas/TargetBadges.mjs';
-import { makeText, sceneGeometry } from './scripts/canvas/geometry.mjs';
+import { makeText, sceneGeometry, sceneUnits } from './scripts/canvas/geometry.mjs';
 import { MODULE_ID, readSettings, registerSettings } from './scripts/settings.mjs';
 import { Ghost } from './scripts/ui/Ghost.mjs';
 import { PinManager } from './scripts/ui/PinManager.mjs';
@@ -41,7 +41,7 @@ function build({ tokenId, itemUuid, actionIndex }) {
       item ??= adapter.resolveItem?.(token?.actor, itemUuid) ?? null;
     }
     if (!token?.actor || (!item && actionIndex == null)) return null;
-    return adapter.specFor({ actor: token.actor, token, item, actionIndex });
+    return adapter.specFor({ actor: token.actor, token, item, actionIndex, units: sceneUnits() });
   } catch (error) {
     report(error);
     return null;
@@ -69,7 +69,7 @@ function redraw() {
     overlay.draw(entries, geo);
     const combatIds = settings.badgesCombatOnly ? new Set(game.combat?.combatants.map(c => c.tokenId) ?? []) : null;
     const targets = canvas.tokens.placeables.filter(token => token.visible && !token.isPreview && (!combatIds || combatIds.has(token.id)));
-    badges.draw(entries, { targets, zoom: canvas.stage.scale.x, blockedFor: (entry, target) => geo.losFor(entry.token).point(target.center) });
+    badges.draw(entries, { targets, zoom: canvas.stage.scale.x, units: sceneUnits(), blockedFor: (entry, target) => geo.losFor(entry.token).point(target.center) });
   } catch (error) {
     report(error);
     ghost?.releaseAll();

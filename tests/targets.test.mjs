@@ -30,3 +30,17 @@ test('badgeText: non-finite distance renders a dash (final 10)', () => {
   assert.equal(badgeText({ distance: NaN, penalty: null, outOfRange: true }), '— ft · ✗');
   assert.equal(badgeText({ distance: Infinity, penalty: 0, outOfRange: false }), '— ft · ✗');
 });
+
+test('badgeText: band mark beats penalty and ✓; ✗ beats the mark; units', () => {
+  assert.equal(badgeText({ distance: 200, penalty: 0, outOfRange: false, mark: 'Disadv.' }), '200 ft · Disadv.');
+  assert.equal(badgeText({ distance: 700, penalty: null, outOfRange: true, mark: 'Disadv.' }), '700 ft · ✗');
+  assert.equal(badgeText({ distance: 45, penalty: -2, outOfRange: false, mark: null }), '45 ft · –2');
+  assert.equal(badgeText({ distance: 9, penalty: 0, outOfRange: false }, 'm'), '9 m · ✓');
+  assert.equal(badgeText({ distance: NaN, penalty: null, outOfRange: true }, 'm'), '— m · ✗');
+});
+
+test('badgeText keeps one decimal on metric scenes (Review Focus 1)', () => {
+  assert.equal(badgeText({ distance: 7.5, penalty: 0, outOfRange: false }, 'm'), '7.5 m · ✓');
+  assert.equal(badgeText({ distance: 3.0000001, penalty: 0, outOfRange: false }, 'm'), '3 m · ✓');
+  assert.equal(badgeText({ distance: 200.4, penalty: null, outOfRange: true }, 'ft'), '200 ft · ✗');
+});

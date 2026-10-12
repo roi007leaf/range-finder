@@ -19,7 +19,7 @@ export class TargetBadges {
 
   destroy() { this.container.destroy({ children: true }); }
 
-  draw(entries, { targets, zoom = 1, blockedFor = () => false }) {
+  draw(entries, { targets, zoom = 1, blockedFor = () => false, units = 'ft' }) {
     for (const child of this.container.removeChildren()) child.destroy({ children: true });
     const settings = this.settings();
     const stack = new Map();
@@ -39,12 +39,12 @@ export class TargetBadges {
         const target = list[k];
         const level = stack.get(target.id) ?? 0;
         stack.set(target.id, level + 1);
-        this.container.addChild(this.#badge(result, target, level, entry, settings, zoom));
+        this.container.addChild(this.#badge(result, target, level, entry, settings, zoom, units));
       });
     }
   }
 
-  #badge(result, target, level, { pin, tint }, settings, zoom) {
+  #badge(result, target, level, { pin, tint }, settings, zoom, units) {
     const band = result.bandIndex === null ? null : pin.spec.bands[result.bandIndex];
     const s = band
       ? bandStyle({ tone: band.tone, index: result.bandIndex, palette: settings.palette, tint })
@@ -53,7 +53,7 @@ export class TargetBadges {
     const pad = 5;
     const parts = [];
     if (result.blocked) parts.push(this.makeText(EYE_SLASH, { fontFamily: faFamily(), fontWeight: '900', fontSize: 13, fill: s.text }));
-    parts.push(this.makeText(badgeText(result), { fontSize: 14, fill: s.text }));
+    parts.push(this.makeText(badgeText({ ...result, mark: band?.mark ?? null }, units), { fontSize: 14, fill: s.text }));
     let x = pad;
     const height = Math.max(...parts.map(part => part.height));
     for (const part of parts) { part.position.set(x, pad / 2); x += part.width + 4; }

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { bandIndexFor, fmtPenalty, hasRange, incrementBands, inBand, makeSpec, maxRange, noneSpec, showsButton, singleBand } from '../scripts/core/spec.mjs';
+import { bandIndexFor, rangeLabel, fmtPenalty, hasRange, incrementBands, inBand, makeSpec, maxRange, noneSpec, showsButton, singleBand } from '../scripts/core/spec.mjs';
 
 test('fmtPenalty uses an en dash and zero', () => {
   assert.equal(fmtPenalty(0), '0');
@@ -54,4 +54,25 @@ test('hasRange / showsButton / maxRange', () => {
   assert.ok(showsButton(noneSpec('Range: varies')));
   assert.ok(!showsButton(noneSpec()));
   assert.ok(!showsButton(null));
+});
+
+test('units in labels and optional band marks', () => {
+  assert.equal(singleBand(9, 'base', null, 'm')[0].label, '9 m');
+  assert.equal(singleBand(30)[0].label, '30 ft');
+  assert.deepEqual(incrementBands(10, 20, 'm').map(b => b.label), ['10 m', '20 m · –2']);
+  const spec = makeSpec({ kind: 'increments', bands: [...singleBand(150), { min: 150, max: 600, penalty: 0, tone: 'increment', label: '600 ft · Disadv.', mark: 'Disadv.' }] });
+  assert.equal(spec.bands[1].mark, 'Disadv.');
+  assert.equal('mark' in spec.bands[0], false, 'no mark unless set');
+  assert.equal(makeSpec({ kind: 'radius', bands: [{ min: 0, max: 5, penalty: 0, tone: 'base', label: 'x', mark: 3 }] }), null);
+});
+
+test('rangeLabel derives a short row label from the spec', () => {
+  const bow = makeSpec({ kind: 'increments', bands: [...singleBand(80), { min: 80, max: 320, penalty: 0, tone: 'increment', label: '320 ft · Disadv.', mark: 'Disadv.' }] });
+  assert.equal(rangeLabel(bow), '80/320 ft');
+  assert.equal(rangeLabel(makeSpec({ kind: 'reach', bands: singleBand(10, 'reach', 'Reach 10 ft') })), 'Reach 10 ft');
+  assert.equal(rangeLabel(makeSpec({ kind: 'radius', bands: singleBand(30) })), '30 ft');
+  assert.equal(rangeLabel(makeSpec({ kind: 'increments', bands: incrementBands(10, 20, 'm') }), 'm'), '10/20 m');
+  assert.equal(rangeLabel(noneSpec('Range: varies')), 'Range: varies');
+  assert.equal(rangeLabel(noneSpec()), '');
+  assert.equal(rangeLabel(null), '');
 });

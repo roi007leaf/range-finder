@@ -15,8 +15,12 @@ export function classifyTargets({ spec, targets }) {
   });
 }
 
-export function badgeText({ distance, penalty, outOfRange }) {
-  if (!Number.isFinite(distance)) return '— ft · ✗';
-  const mark = outOfRange ? '✗' : penalty ? fmtPenalty(penalty) : '✓';
-  return `${Math.round(distance)} ft · ${mark}`;
+const METRIC = new Set(['m', 'km']);
+/** Feet round to whole numbers; metric scenes keep one decimal (1.5 m squares). */
+const fmtDistance = (distance, units) => (METRIC.has(units) ? Math.round(distance * 10) / 10 : Math.round(distance));
+
+export function badgeText({ distance, penalty, outOfRange, mark = null }, units = 'ft') {
+  if (!Number.isFinite(distance)) return `— ${units} · ✗`;
+  const sign = outOfRange ? '✗' : mark || (penalty ? fmtPenalty(penalty) : '✓');
+  return `${fmtDistance(distance, units)} ${units} · ${sign}`;
 }

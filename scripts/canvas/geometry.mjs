@@ -54,3 +54,8 @@ export function faFamily() {
     return FA_FALLBACK;
   }
 }
+
+/** The scene's distance units (`Scene#grid.units`), `ft` when unset. */
+export function sceneUnits(c = globalThis.canvas) {
+  return c?.scene?.grid?.units || 'ft';
+}
