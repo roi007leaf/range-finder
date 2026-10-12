@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **PF2e Unified Spellbook:** the 📏 now appears on its unified spell list (including scroll, wand and staff spells).
+
 ## 0.1.0 (prerelease)
 
 First release.

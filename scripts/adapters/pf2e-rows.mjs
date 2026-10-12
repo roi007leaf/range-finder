@@ -68,9 +68,12 @@ export const pf2eRows = [
   },
   {
     hooks: ['renderActorSheetPF2e'],
-    selector: 'li.spell[data-item-id]',
-    resolve: (el, app) => ({ actor: app.actor, item: itemOf(app.actor, el.dataset.itemId), actionIndex: null }),
-    host: controlsHost
+    // Also matches PF2e Unified Spellbook's list (same li.spell markup, with data-entry-id), which that module
+    // inserts after the sheet renders — `observe` re-decorates when it appears. Virtual slot rows are skipped.
+    selector: 'li.spell[data-item-id]:not(.virtual)',
+    resolve: (el, app) => ({ actor: app.actor, item: spellOf(app.actor, el.dataset.entryId, el.dataset.itemId), actionIndex: null }),
+    host: controlsHost,
+    observe: true
   },
   {
     hooks: ['renderCharacterSheetPF2e'],

@@ -128,3 +128,27 @@ test('pf2e-hud sidebar rows restore the sidebar; the persistent shortcuts row do
   assert.ok(sidebar.every(r => r.onPreview === hudSidebarRestore));
   assert.equal(pf2eRows.find(r => r.persistentHud).onPreview, undefined);
 });
+
+test('PF2e Unified Spellbook: rows inserted after render get the button; entry-collection spells resolve; virtual rows skipped', async () => {
+  const dom = new JSDOM('<div class="application"><section class="tab known-spells"><ol class="spellcastingEntry-list"></ol></section></div>');
+  const doc = dom.window.document;
+  const arc = { uuid: 'Actor.a.Item.arc', name: 'Electric Arc', type: 'spell', system: { range: { value: '30 feet' } } };
+  const haste = { uuid: 'Actor.a.Item.haste', name: 'Haste', type: 'spell', system: { range: { value: '30 feet' } } };
+  const actor = { items: new Map([['arc', arc]]), spellcasting: { collections: new Map([['scroll', new Map([['haste', haste]])]]) }, system: { attributes: { reach: { base: 5 } } } };
+  const calls = [];
+  const triggers = new Triggers({ adapter: pf2eAdapter, pins: { pinFor: () => null, toggle: r => calls.push(r) }, resolveToken: () => ({ id: 't1' }), doc });
+  const root = doc.querySelector('.application');
+  triggers.decorate(root, { actor }, 'renderActorSheetPF2e');
+  assert.equal(doc.querySelectorAll('.range-finder-btn').length, 0);
+  // Unified Spellbook inserts its list asynchronously after the render hook.
+  root.querySelector('.tab').insertAdjacentHTML('afterbegin', `<ol class="spellcastingEntry-list unified-spell-list"><li class="item"><ol class="spell-list">
+    <li class="spell" data-item-type="spell" data-item-id="arc" data-entry-id="prepared"><div class="item-controls"></div></li>
+    <li class="spell" data-item-type="spell" data-item-id="haste" data-entry-id="scroll"><div class="item-controls"></div></li>
+    <li class="spell virtual" data-item-type="spell-slot-group" data-item-id="arc" data-entry-id="prepared"><div class="item-controls"></div></li>
+  </ol></li></ol>`);
+  await new Promise(r => setTimeout(r, 20));
+  assert.ok(doc.querySelector('[data-item-id="arc"]:not(.virtual) .item-controls .range-finder-btn'));
+  assert.ok(doc.querySelector('[data-item-id="haste"] .item-controls .range-finder-btn'), 'scroll spell resolved through its entry');
+  assert.equal(doc.querySelector('.virtual .range-finder-btn'), null);
+  assert.equal(doc.querySelectorAll('.range-finder-btn').length, 2, 'no duplicates after the observer re-decorates');
+});

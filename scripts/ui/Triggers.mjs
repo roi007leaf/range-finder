@@ -25,11 +25,31 @@ export class Triggers {
 
   decorate(root, app, hookName) {
     if (!root?.querySelectorAll) return;
+    let observe = false;
     for (const def of [...(this.adapter.rows ?? []), ...this.#extraRows]) {
       if (hookName && def.hooks && !def.hooks.includes(hookName)) continue;
+      observe ||= Boolean(def.observe);
       for (const el of root.querySelectorAll(def.selector)) this.#decorateRow(el, def, app);
     }
     this.refresh(root);
+    if (observe) this.#observe(root, app, hookName);
+  }
+
+  #observed = new WeakSet();
+
+  /** Rows another module inserts after render (e.g. PF2e Unified Spellbook) get decorated when they appear. */
+  #observe(root, app, hookName) {
+    const Observer = this.doc.defaultView?.MutationObserver ?? globalThis.MutationObserver;
+    if (!Observer || this.#observed.has(root)) return;
+    this.#observed.add(root);
+    let queued = false;
+    const observer = new Observer(records => {
+      if (!root.isConnected) { observer.disconnect(); return; }
+      if (queued || !records.some(r => [...r.addedNodes].some(n => n.nodeType === 1 && !n.classList?.contains('range-finder-btn')))) return;
+      queued = true;
+      queueMicrotask(() => { queued = false; this.decorate(root, app, hookName); });
+    });
+    observer.observe(root, { childList: true, subtree: true });
   }
 
   #decorateRow(el, def, app) {

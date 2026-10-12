@@ -2,7 +2,7 @@
 
 See an item's, attack's, spell's or skill action's range right on the canvas — in any system.
 
-- **📏 on item rows** — PF2e/SF2e character and NPC sheets (strikes, weapons, spells, owned actions and feats), PF2e HUD sidebars (actions, spells, items, skills) and shortcuts, D&D 5e character and NPC sheets (inventory, features, spells). Click to pin, click again (or press Esc) to clear.
+- **📏 on item rows** — PF2e/SF2e character and NPC sheets (strikes, weapons, spells, owned actions and feats), PF2e HUD sidebars (actions, spells, items, skills) and shortcuts, PF2e Unified Spellbook's unified spell list, D&D 5e character and NPC sheets (inventory, features, spells). Click to pin, click again (or press Esc) to clear.
 - **📏 on the Token HUD** — every system: right-click your token, click 📏 and pick from its attacks, spells, skill actions and other items. Only items with a range or a note are listed (note-only rows are disabled, with the note as tooltip). Click a row to pin, Shift+click to share, hold Alt over a row to preview. The list follows the HUD when the token moves or the canvas pans. Turn the button off with *Token HUD button*.
 - **📏 in item sheet headers** — every system: an owned item's sheet gets a 📏 control (in the header menu on V2 sheets) that pins it for the owner's token.
 - **GM clear tool** — GMs get a *Range Finder — clear shared ranges* button in the Token scene controls (and an unbound keybinding) that removes every shared range for all players.
@@ -20,7 +20,7 @@ Works on square grids (per-square bands) and hex/gridless scenes (rings). Area s
 
 ## Supported systems
 
-- **PF2e** — strikes, weapons, spells, skill actions and feat actions with range increments, reach, volley and per-use boosts; sheets, PF2e HUD and Token HUD.
+- **PF2e** — strikes, weapons, spells, skill actions and feat actions with range increments, reach, volley and per-use boosts; sheets, PF2e HUD, PF2e Unified Spellbook and Token HUD.
 - **SF2e** — as PF2e, plus area and automatic weapons' area labels.
 - **D&D 5e (6.x)** — weapons, spells and feature activities: normal / long range (`Disadv.`), reach, touch and template ranges; character and NPC sheets.
 - **Daggerheart** — weapon attacks, adversary attacks and domain card / feature actions as nested Melee → Very Far bands from the scene's range settings, measured like the system's own range check.
