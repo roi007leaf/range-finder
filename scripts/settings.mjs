@@ -12,7 +12,8 @@ export const SETTINGS = {
   ghostMode: { scope: 'client', type: String, default: 'fade', choices: choices('ghostMode', ['fade', 'minimize', 'off']) },
   ghostPersistentHud: { scope: 'client', type: Boolean, default: false },
   allowSharing: { scope: 'world', type: Boolean, default: true },
-  badgesCombatOnly: { scope: 'world', type: Boolean, default: false }
+  badgesCombatOnly: { scope: 'world', type: Boolean, default: false },
+  rangeField: { scope: 'world', type: String, default: '' }
 };
 
 // Foundry localizes setting names, hints and choices itself, so the default localize is the identity.

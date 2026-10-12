@@ -1,25 +1,52 @@
-/** Fallback adapter: reads a plain range number (or {value, long}) from item.system.range. */
-import { alternatingDistance } from '../core/cells.mjs';
-import { makeSpec, noneSpec, singleBand } from '../core/spec.mjs';
+/** Fallback adapter: a GM-chosen data path (world setting `rangeField`) or an auto-detected item.system.range. */
+import { makeSpec, noneSpec, showsButton, singleBand } from '../core/spec.mjs';
+import { sceneUnits } from '../canvas/geometry.mjs';
+import { defaultCellMeasure, defaultDistance } from './measure.mjs';
+import { getPath, itemsOf } from './util.mjs';
 
-function specFor({ item }) {
-  if (!item) return noneSpec();
-  const name = item.name ?? '';
-  const range = item.system?.range;
-  const value = typeof range === 'number' ? range : Number(range?.value) || 0;
-  const long = typeof range === 'object' && range ? Number(range.long) || 0 : 0;
-  if (!(value > 0)) return noneSpec(null, name);
-  const bands = singleBand(value);
-  if (long > value) bands.push({ min: value, max: long, penalty: 0, tone: 'increment', label: `${long} ft · long` });
-  return makeSpec({ kind: long > value ? 'increments' : 'radius', bands, itemName: name });
+export { getPath };
+
+const settingField = () => {
+  try { return globalThis.game?.settings?.get?.('range-finder', 'rangeField') ?? ''; } catch { return ''; }
+};
+
+/** A number (or numeric string), `{ value, long }` or `{ value, units }` → `{ value, long }`; else null. */
+export function readRange(raw) {
+  if (typeof raw === 'number' || (typeof raw === 'string' && raw.trim() !== '')) {
+    const value = Number(raw);
+    return Number.isFinite(value) && value > 0 ? { value, long: 0 } : null;
+  }
+  if (raw && typeof raw === 'object') {
+    const value = Number(raw.value) || 0;
+    return value > 0 ? { value, long: Number(raw.long) || 0 } : null;
+  }
+  return null;
 }
 
-const cellMeasure = (_spec, unit = 5) => Object.assign((from, to) => alternatingDistance(from, to, unit), { bandSensitive: () => false });
+const groupOf = item => (item.type === 'weapon' ? 'attacks' : item.type === 'spell' ? 'spells' : 'other');
 
-function distance(source, target) {
-  const grid = globalThis.canvas?.grid;
-  if (!grid?.measurePath || !source?.center || !target?.center) return NaN;
-  return grid.measurePath([source.center, target.center]).distance;
+export function createGenericAdapter({ rangeField = settingField, units = sceneUnits } = {}) {
+  function specFor({ item, units: given } = {}) {
+    if (!item) return noneSpec();
+    const name = item.name ?? '';
+    const u = given ?? units();
+    const path = String(rangeField() ?? '').trim();
+    const range = (path ? readRange(getPath(item, path)) : null) ?? readRange(item.system?.range);
+    if (!range) return noneSpec(null, name);
+    const bands = singleBand(range.value, 'base', null, u);
+    if (range.long > range.value) {
+      bands.push({ min: range.value, max: range.long, penalty: 0, tone: 'increment', label: `${range.long} ${u} · Long`, mark: 'Long' });
+    }
+    return makeSpec({ kind: bands.length > 1 ? 'increments' : 'radius', bands, itemName: name });
+  }
+
+  function listItems(actor) {
+    return itemsOf(actor)
+      .filter(item => showsButton(specFor({ item })))
+      .map(item => ({ item, actionIndex: null, group: groupOf(item) }));
+  }
+
+  return { id: 'generic', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, listItems, rows: [] };
 }
 
-export const genericAdapter = { id: 'generic', specFor, cellMeasure, distance, rows: [] };
+export const genericAdapter = createGenericAdapter();

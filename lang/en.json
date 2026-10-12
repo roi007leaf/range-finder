@@ -77,6 +77,10 @@
       "badgesCombatOnly": {
         "Name": "Range Finder: badges only in combat",
         "Hint": "Only show distance badges on combatants of the active combat."
+      },
+      "rangeField": {
+        "Name": "Range Finder: range field (other systems)",
+        "Hint": "Item data path holding the range, e.g. system.range.value. A number, or { value, long }. Leave empty to auto-detect system.range. Not used by PF2e, SF2e or D&D 5e."
       }
     }
   }
