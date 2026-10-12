@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { alternatingDistance, bandCells, cellKey, chebyshevDistance } from '../scripts/core/cells.mjs';
+import { alternatingDistance, bandCells, cellKey, chebyshevDistance, DIAGONALS, diagonalDistance, edgeDistance } from '../scripts/core/cells.mjs';
 import { incrementBands, singleBand } from '../scripts/core/spec.mjs';
 import { cellMeasure } from '../scripts/adapters/pf2e.mjs';
 
@@ -76,4 +76,32 @@ test('600 ft longbow stays bounded and fast', () => {
   assert.ok(cells.every(c => c.i >= 0 && c.i < 300 && c.j >= 0 && c.j < 300), 'cells outside the scene grid');
   assert.ok(cells.every(c => c.i <= 130 && c.j <= 130), 'cells beyond 600 ft');
   assert.ok(Date.now() - started < 3000, 'banding took too long');
+});
+
+test('diagonalDistance follows every GRID_DIAGONALS rule (matches SquareGrid#measurePath)', () => {
+  const o = { i: 0, j: 0 };
+  const points = [{ i: 0, j: 1 }, { i: 1, j: 1 }, { i: 2, j: 2 }, { i: 3, j: 1 }];
+  const r2 = Math.SQRT2;
+  const cases = [
+    [DIAGONALS.EQUIDISTANT, [5, 5, 10, 15]],
+    [DIAGONALS.EXACT, [5, 5 * r2, 10 * r2, 5 * (3 + r2 - 1)]],
+    [DIAGONALS.APPROXIMATE, [5, 7.5, 15, 17.5]],
+    [DIAGONALS.RECTILINEAR, [5, 10, 20, 20]],
+    [DIAGONALS.ALTERNATING_1, [5, 5, 15, 15]],
+    [DIAGONALS.ALTERNATING_2, [5, 10, 15, 20]],
+    [DIAGONALS.ILLEGAL, [5, 10, 20, 20]]
+  ];
+  for (const [rule, expected] of cases) {
+    points.forEach((p, k) => assert.ok(Math.abs(diagonalDistance(o, p, 5, rule) - expected[k]) < 1e-9, `rule ${rule} point ${k}`));
+  }
+  assert.equal(diagonalDistance(o, { i: 3, j: 3 }, 1.5, DIAGONALS.EQUIDISTANT), 4.5, 'metric unit');
+  assert.equal(diagonalDistance(o, { i: 2, j: 2 }), 15, 'default is ALTERNATING_1');
+});
+
+test('edgeDistance: closest occupied cells for 1x1 and 2x2 tokens', () => {
+  const big = [{ i: 0, j: 0 }, { i: 0, j: 1 }, { i: 1, j: 0 }, { i: 1, j: 1 }];
+  assert.equal(edgeDistance([{ i: 0, j: 0 }], [{ i: 0, j: 1 }]), 5);
+  assert.equal(edgeDistance(big, [{ i: 1, j: 3 }]), 10);
+  assert.equal(edgeDistance(big, [{ i: 3, j: 3 }], 5, DIAGONALS.EQUIDISTANT), 10);
+  assert.ok(Number.isNaN(edgeDistance([], big)));
 });

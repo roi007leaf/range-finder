@@ -3,14 +3,39 @@ import { inBand } from './spec.mjs';
 
 export const cellKey = ({ i, j }) => `${i},${j}`;
 
-/** Square grid, diagonals alternate 5/10/5 (PF2e and Foundry's default rule). */
-export function alternatingDistance(a, b, unit = 5) {
+/** Foundry's CONST.GRID_DIAGONALS values (v14 common/constants.mjs). */
+export const DIAGONALS = Object.freeze({ EQUIDISTANT: 0, EXACT: 1, APPROXIMATE: 2, RECTILINEAR: 3, ALTERNATING_1: 4, ALTERNATING_2: 5, ILLEGAL: 6 });
+
+/** Cell-to-cell distance under a grid diagonal rule; mirrors SquareGrid#measurePath for 2D offsets. */
+export function diagonalDistance(a, b, unit = 5, rule = DIAGONALS.ALTERNATING_1) {
   const di = Math.abs(a.i - b.i), dj = Math.abs(a.j - b.j);
-  return unit * (Math.max(di, dj) + Math.floor(Math.min(di, dj) / 2));
+  const straight = Math.max(di, dj), diagonal = Math.min(di, dj);
+  switch (rule) {
+    case DIAGONALS.EQUIDISTANT: return unit * straight;
+    case DIAGONALS.EXACT: return unit * (straight + (Math.SQRT2 - 1) * diagonal);
+    case DIAGONALS.APPROXIMATE: return unit * (straight + 0.5 * diagonal);
+    case DIAGONALS.RECTILINEAR:
+    case DIAGONALS.ILLEGAL: return unit * (di + dj);
+    case DIAGONALS.ALTERNATING_2: return unit * (straight + Math.ceil(diagonal / 2));
+    case DIAGONALS.ALTERNATING_1:
+    default: return unit * (straight + Math.floor(diagonal / 2));
+  }
+}
+
+/** Square grid, diagonals alternate 5/10/5 (PF2e's rule). */
+export function alternatingDistance(a, b, unit = 5) {
+  return diagonalDistance(a, b, unit, DIAGONALS.ALTERNATING_1);
 }
 
 export function chebyshevDistance(a, b, unit = 5) {
-  return unit * Math.max(Math.abs(a.i - b.i), Math.abs(a.j - b.j));
+  return diagonalDistance(a, b, unit, DIAGONALS.EQUIDISTANT);
+}
+
+/** Edge-to-edge distance between two tokens: the closest pair of their occupied cells. */
+export function edgeDistance(aCells, bCells, unit = 5, rule = DIAGONALS.ALTERNATING_1) {
+  let best = Infinity;
+  for (const a of aCells ?? []) for (const b of bCells ?? []) best = Math.min(best, diagonalDistance(a, b, unit, rule));
+  return best === Infinity ? NaN : best;
 }
 
 /**
