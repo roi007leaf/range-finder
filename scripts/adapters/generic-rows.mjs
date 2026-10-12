@@ -1,5 +1,5 @@
 /** Catch-all row definition for systems without a built-in adapter: any element carrying an item id / uuid. */
-const ATTRS = ['data-item-id', 'data-item-uuid', 'data-uuid', 'data-document-id'];
+const ATTRS = ['data-item-id', 'data-item-uuid', 'data-uuid', 'data-document-id', 'data-document-uuid'];
 export const GENERIC_ROW_SELECTOR = ATTRS.map(attr => `[${attr}]`).join(',');
 const OWN_UI = '[class*="range-finder-"]';
 
