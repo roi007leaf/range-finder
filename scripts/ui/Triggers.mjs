@@ -161,6 +161,7 @@ export class Triggers {
   /** Alt+click on a variant control: the click wins over the hold-Alt preview. */
   #onPointerDown(event) {
     if (!event.altKey || !event.target?.closest?.(`[${ALT_ATTR}]`)) return;
+    if (!this.#keyHeld) return;
     this.#altClick = true;
     this.pins.endPreview();
   }
@@ -172,6 +173,7 @@ export class Triggers {
   }
 
   keyDown() {
+    if (!this.#keyHeld) this.#altClick = false;
     this.#keyHeld = true;
     this.#startPreview();
   }

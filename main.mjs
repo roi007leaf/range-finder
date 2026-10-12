@@ -194,7 +194,12 @@ Hooks.on('canvasTearDown', () => {
 Hooks.on('renderTokenHUD', (app, html) => {
   try { hudList?.attach(app, rootOf(html, app)); } catch (error) { report(error); }
 });
-Hooks.on('closeTokenHUD', () => hudList?.close());
+Hooks.on('closeTokenHUD', () => {
+  try { hudList?.close(); } catch (error) { report(error); }
+});
+for (const hook of ['refreshToken', 'canvasPan']) {
+  Hooks.on(hook, () => { try { hudList?.reposition(); } catch (error) { report(error); } });
+}
 
 // Foundry v14: drag previews are Token clones; `isPreview` (PlaceableObject getter) is true and `_original`
 // is the real token. The preview's document x/y is updated live while dragging.

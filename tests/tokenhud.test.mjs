@@ -135,3 +135,25 @@ test('lists only items whose spec shows a button: ranged rows active, note-only 
   assert.equal(rowNamed(s, 'Wish').dataset.tooltip, 'Range: varies');
   assert.ok(!rowNamed(s, 'Longbow').classList.contains('is-disabled'));
 });
+
+test('Alt+click on a HUD row with an adapter variant pins that variant', () => {
+  const s = setup();
+  s.hudList.triggers.adapter.altVariant = ctx => (ctx.item.uuid === 'Item.arc' ? { id: 'reach-spell', label: 'Reach Spell' } : null);
+  s.hudList.attach(s.hud, s.root);
+  click(s, s.root.querySelector('.range-finder-hud-btn'));
+  const arc = rowNamed(s, 'Electric Arc');
+  assert.equal(arc.getAttribute('data-range-finder-alt'), 'reach-spell');
+  click(s, arc, { altKey: true });
+  assert.equal(s.calls[0][1].variant, 'reach-spell');
+  assert.equal(s.calls[0][1].tokenId, 't1');
+});
+
+test('reposition is a no-op when closed and moves the open popover', () => {
+  const s = setup();
+  s.hudList.attach(s.hud, s.root);
+  s.hudList.reposition();
+  click(s, s.root.querySelector('.range-finder-hud-btn'));
+  s.root.getBoundingClientRect = () => ({ left: 100, right: 300, top: 50 });
+  s.hudList.reposition();
+  assert.equal(s.doc.getElementById('range-finder-hud-list').style.top, '50px');
+});

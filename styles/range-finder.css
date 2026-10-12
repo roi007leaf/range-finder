@@ -10,6 +10,8 @@
 .range-finder-btn.is-shared { color: var(--range-finder-user, #2ec4b6); box-shadow: 0 0 0 1px currentColor, 0 0 8px currentColor; }
 .range-finder-btn.is-disabled { opacity: .4; cursor: help; }
 .range-finder-ghostable { transition: opacity .15s ease; }
+/* Alt+click on a variant 📏 must reach it even inside a ghosted window (click wins over the hold-Alt preview). */
+.range-finder-ghost .range-finder-btn[data-range-finder-alt] { pointer-events: auto !important; }
 .range-finder-ghost { opacity: .1 !important; pointer-events: none !important; }
 @media (prefers-reduced-motion: reduce) {
   .range-finder-btn, .range-finder-ghostable { transition: none; }

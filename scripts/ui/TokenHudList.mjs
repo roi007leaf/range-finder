@@ -20,7 +20,9 @@ export class TokenHudList {
       wholeRow: true,
       ghostTargets: () => []
     }]);
-    doc.addEventListener('keydown', event => { if (event.key === 'Escape') this.close(); });
+    doc.addEventListener('keydown', event => {
+      try { if (event.key === 'Escape') this.close(); } catch (error) { console.error('Range Finder |', error); }
+    });
   }
 
   get isOpen() { return Boolean(this.#el?.isConnected); }
@@ -44,10 +46,14 @@ export class TokenHudList {
     button.setAttribute('aria-expanded', String(open));
     button.innerHTML = '<i class="fa-solid fa-ruler-combined"></i>';
     button.addEventListener('click', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      if (this.isOpen && this.#token === token) this.close();
-      else this.open(hud, button);
+      try {
+        event.preventDefault();
+        event.stopPropagation();
+        if (this.isOpen && this.#token === token) this.close();
+        else this.open(hud, button);
+      } catch (error) {
+        console.error('Range Finder |', error);
+      }
     });
     column.append(button);
     if (open) this.#button = button; // the HUD re-rendered for the same token
@@ -85,6 +91,11 @@ export class TokenHudList {
     anchor?.setAttribute?.('aria-expanded', 'true');
     this.#position(el, anchor);
     this.triggers.decorate(el, hud, HUD_HOOK);
+  }
+
+  /** Follow the HUD when it moves (token drag / canvas pan). */
+  reposition() {
+    if (this.isOpen && this.#button?.isConnected) this.#position(this.#el, this.#button);
   }
 
   close() {

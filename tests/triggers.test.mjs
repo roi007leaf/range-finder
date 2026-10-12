@@ -213,3 +213,37 @@ test('whole-row controls via addRows: the row is the button and carries the acti
   assert.deepEqual(calls[0][1].sourceEl, []);
   assert.ok(bow.classList.contains('is-active'));
 });
+
+test('ghosted windows keep the variant 📏 clickable (CSS rule present)', async () => {
+  const { readFile } = await import('node:fs/promises');
+  const css = await readFile(new URL('../styles/range-finder.css', import.meta.url), 'utf8');
+  assert.match(css, /\.range-finder-ghost \.range-finder-btn\[data-range-finder-alt\]\s*\{\s*pointer-events:\s*auto\s*!important;/);
+});
+
+test('Alt+pointerdown on a variant 📏 mid-preview ends the preview, then the click pins the variant', () => {
+  const { doc, dom, triggers, calls } = setup();
+  triggers.adapter.altVariant = reachSpell;
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  const row = doc.querySelector('[data-id="bow"]');
+  const button = row.querySelector('.range-finder-btn');
+  row.querySelector('.name').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+  triggers.keyDown();
+  assert.deepEqual(calls.map(c => c[0]), ['preview']);
+  button.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, altKey: true }));
+  button.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, altKey: true }));
+  assert.deepEqual(calls.map(c => c[0]), ['preview', 'endPreview', 'toggle']);
+  assert.equal(calls[2][1].variant, 'reach-spell');
+});
+
+test('an Alt click made while the preview key is not held does not block the next preview', () => {
+  const { doc, dom, triggers, calls } = setup();
+  triggers.adapter.altVariant = reachSpell;
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  const button = doc.querySelector('[data-id="bow"] .range-finder-btn');
+  button.dispatchEvent(new dom.window.MouseEvent('pointerdown', { bubbles: true, altKey: true }));
+  doc.querySelector('[data-id="wish"]').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+  const normal = doc.querySelector('[data-id="bow"] .name');
+  normal.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+  triggers.keyDown();
+  assert.deepEqual(calls.map(c => c[0]), ['preview']);
+});
