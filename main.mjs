@@ -15,6 +15,20 @@ let frame = null;
 const dragging = new Map();
 const report = error => console.error('Range Finder |', error);
 
+/** Display name of the first key bound to "Preview hovered range" (e.g. "Alt"), or null when unbound. */
+function previewKey() {
+  try {
+    const binding = game.keybindings.get(MODULE_ID, 'preview')?.[0];
+    if (!binding?.key) return null;
+    const KM = foundry.helpers?.interaction?.KeyboardManager;
+    const keys = [...(binding.modifiers ?? []), String(KM?.getKeycodeDisplayString?.(binding.key) ?? binding.key).replace(/(Left|Right)$/, '')];
+    return keys.join('+');
+  } catch (error) {
+    report(error);
+    return null;
+  }
+}
+
 const userColor = id => {
   const color = game.users.get(id)?.color;
   return color === undefined || color === null ? null : Number(color);
@@ -159,7 +173,8 @@ Hooks.once('ready', () => {
     adapter, pins, resolveToken,
     notify: message => ui.notifications.warn(message),
     localize: key => game.i18n.localize(key),
-    settings: readSettings
+    settings: readSettings,
+    previewKey
   });
   hudList = new TokenHudList({
     adapter, triggers,

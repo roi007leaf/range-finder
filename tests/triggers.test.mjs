@@ -296,3 +296,22 @@ test('a throwing onPreview or restore does not break the preview', () => {
     console.error = quiet;
   }
 });
+
+test('button tooltip mentions the hold-to-preview key; omitted when unbound or disabled', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { Triggers } = await import('../scripts/ui/Triggers.mjs');
+  const { makeSpec, noneSpec, singleBand } = await import('../scripts/core/spec.mjs');
+  const make = previewKey => {
+    const dom = new JSDOM('<div class="application"><ul><li class="row" data-id="bow"></li><li class="row" data-id="wish"></li></ul></div>');
+    const doc = dom.window.document;
+    const items = { bow: { uuid: 'Item.bow', spec: makeSpec({ kind: 'radius', bands: singleBand(60) }) }, wish: { uuid: 'Item.wish', spec: noneSpec('Range: varies') } };
+    const adapter = { specFor: ({ item }) => item.spec, rows: [{ hooks: ['r'], selector: 'li.row', resolve: el => ({ actor: {}, item: items[el.dataset.id] }) }] };
+    const t = new Triggers({ adapter, pins: { pinFor: () => null }, resolveToken: () => ({ id: 't' }), localize: k => (k === 'RANGE_FINDER.Button.Preview' ? 'hold {key} to preview' : k), previewKey, doc });
+    t.decorate(doc.querySelector('.application'), {}, 'r');
+    return doc;
+  };
+  const doc = make(() => 'Alt');
+  assert.equal(doc.querySelector('[data-id="bow"] .range-finder-btn').dataset.tooltip, 'RANGE_FINDER.Button.Show · hold Alt to preview');
+  assert.equal(doc.querySelector('[data-id="wish"] .range-finder-btn').dataset.tooltip, 'Range: varies');
+  assert.equal(make(() => null).querySelector('[data-id="bow"] .range-finder-btn').dataset.tooltip, 'RANGE_FINDER.Button.Show');
+});

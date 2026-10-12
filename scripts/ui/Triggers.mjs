@@ -18,8 +18,8 @@ export class Triggers {
   #altClick = false;
   #restore = null;
 
-  constructor({ adapter, pins, resolveToken, notify = () => {}, localize = key => key, settings = () => ({}), doc = globalThis.document }) {
-    Object.assign(this, { adapter, pins, resolveToken, notify, localize, settings, doc });
+  constructor({ adapter, pins, resolveToken, notify = () => {}, localize = key => key, settings = () => ({}), previewKey = () => null, doc = globalThis.document }) {
+    Object.assign(this, { adapter, pins, resolveToken, notify, localize, settings, previewKey, doc });
     doc.addEventListener('pointerover', event => this.#onHover(event));
     // Capture phase: runs before the click and before a preview could ghost the window.
     doc.addEventListener('pointerdown', event => this.#onPointerDown(event), true);
@@ -79,6 +79,9 @@ export class Triggers {
     }
     const alt = active ? this.adapter.altVariant?.(ctx) ?? null : null;
     let tooltip = active ? this.localize('RANGE_FINDER.Button.Show') : spec.note;
+    // Mention the hold-to-preview key (it's rebindable; omitted when unbound).
+    const key = active ? this.previewKey() : null;
+    if (key) tooltip = `${tooltip} · ${this.localize('RANGE_FINDER.Button.Preview').replace('{key}', key)}`;
     if (alt) {
       control.setAttribute(ALT_ATTR, alt.id);
       tooltip = `${tooltip} · ${this.localize('RANGE_FINDER.Button.Alt')} ${alt.label}`;
