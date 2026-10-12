@@ -9,9 +9,9 @@ test('classifies by band, penalty and range', () => {
   const [a, b, c, d] = classifyTargets({ spec: javelin, targets: [
     { id: 'a', distance: 25 }, { id: 'b', distance: 45 }, { id: 'c', distance: 200 }, { id: 'd', distance: 30, blocked: true }
   ] });
-  assert.deepEqual(a, { id: 'a', distance: 25, bandIndex: 0, penalty: 0, outOfRange: false, blocked: false });
-  assert.deepEqual(b, { id: 'b', distance: 45, bandIndex: 1, penalty: -2, outOfRange: false, blocked: false });
-  assert.deepEqual(c, { id: 'c', distance: 200, bandIndex: null, penalty: null, outOfRange: true, blocked: false });
+  assert.deepEqual(a, { id: 'a', distance: 25, bandIndex: 0, penalty: 0, outOfRange: false, blocked: false, zones: [] });
+  assert.deepEqual(b, { id: 'b', distance: 45, bandIndex: 1, penalty: -2, outOfRange: false, blocked: false, zones: [] });
+  assert.deepEqual(c, { id: 'c', distance: 200, bandIndex: null, penalty: null, outOfRange: true, blocked: false, zones: [] });
   assert.equal(d.blocked, true);
 });
 
@@ -50,4 +50,16 @@ test('badgeText: one decimal whenever not whole, whatever the units string', () 
   assert.equal(badgeText({ distance: 7.5, penalty: 0, outOfRange: false }, 'meters'), '7.5 meters · ✓');
   assert.equal(badgeText({ distance: 7.04, penalty: 0, outOfRange: false }, 'meters'), '7 meters · ✓');
   assert.equal(badgeText({ distance: 12.5, penalty: 0, outOfRange: false }, 'squares'), '12.5 squares · ✓');
+});
+
+test('penalty zones (PF2e volley) stack onto the target penalty and name themselves', () => {
+  const longbow = makeSpec({ kind: 'increments', bands: incrementBands(100, 600), overlays: [{ min: 0, max: 30, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2', badge: 'Volley' }] });
+  const [near, edge, far, out] = classifyTargets({ spec: longbow, targets: [{ id: 'n', distance: 20 }, { id: 'e', distance: 30 }, { id: 'f', distance: 35 }, { id: 'o', distance: 700 }] });
+  assert.equal(near.penalty, -2); assert.deepEqual(near.zones, ['Volley']);
+  assert.equal(edge.penalty, -2, 'within 30 ft includes 30');
+  assert.equal(far.penalty, 0); assert.deepEqual(far.zones, []);
+  assert.deepEqual(out.zones, []);
+  assert.equal(badgeText(near), '20 ft · –2 Volley');
+  assert.equal(badgeText(far), '35 ft · ✓');
+  assert.equal(badgeText({ ...near, mark: 'Reach Spell' }), '20 ft · –2 Volley · Reach Spell');
 });

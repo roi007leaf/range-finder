@@ -25,7 +25,7 @@ test('longbow: six increments to 600 plus volley zone', () => {
   assert.equal(spec.bands.length, 6);
   assert.equal(spec.bands.at(-1).max, 600);
   assert.equal(spec.bands.at(-1).penalty, -10);
-  assert.deepEqual(spec.overlays, [{ min: 0, max: 30, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2' }]);
+  assert.deepEqual(spec.overlays, [{ min: 0, max: 30, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2', badge: 'Volley' }]);
   assert.equal(spec.itemName, 'Longbow');
 });
 

@@ -35,7 +35,7 @@ function weaponSpec(actor, item) {
   const range = item.range ?? null;
   const overlays = [];
   const volley = traitNumber(item, 'volley');
-  if (volley) overlays.push({ min: 0, max: volley, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2' });
+  if (volley) overlays.push({ min: 0, max: volley, penalty: -2, tone: 'penalty-zone', label: 'Volley · –2', badge: 'Volley' });
   const melee = item.isMelee ?? !range;
   const thrownBoosts = (increment, from) => boosted(actor, item, 'weapon', from, boost => {
     const max = adjustIncrement(increment, { actor, weapon: item, boost: boost.id }) * MAX_INCREMENTS;

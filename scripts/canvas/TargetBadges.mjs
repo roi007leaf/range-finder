@@ -47,7 +47,8 @@ export class TargetBadges {
 
   #badge(result, target, level, { pin, tint, adapter }, settings, zoom, units) {
     const band = result.bandIndex === null ? null : pin.spec.bands[result.bandIndex];
-    const s = band
+    // A target in a penalty zone (volley) gets the zone's red plate so it stands out at a glance.
+    const s = band && !result.zones?.length
       ? bandStyle({ tone: band.tone, index: result.bandIndex, palette: settings.palette, tint })
       : bandStyle({ tone: 'penalty-zone', palette: settings.palette });
     const plate = new this.PIXI.Container();
