@@ -29,18 +29,8 @@ test('generic cellMeasure ignores bands (measured once per cell)', () => {
   assert.equal(measure({ i: 0, j: 0 }, { i: 2, j: 2 }), 15);
 });
 
-test('generic: rangeField path wins, missing path / string numbers fall back (Review Focus 4)', () => {
-  const custom = createGenericAdapter({ rangeField: () => 'system.attack.range', units: () => 'ft' });
-  assert.equal(custom.specFor({ item: { name: 'Sling', system: { attack: { range: 40 }, range: 10 } } }).bands[0].max, 40);
-  assert.equal(custom.specFor({ item: { name: 'Sling', system: { attack: { range: '25' } } } }).bands[0].max, 25);
-  assert.equal(custom.specFor({ item: { name: 'Bow', system: { range: { value: 60, units: 'ft' } } } }).bands[0].max, 60, 'path yields nothing → auto-detect');
-  const longPath = createGenericAdapter({ rangeField: () => 'system.r', units: () => 'ft' });
-  const spec = longPath.specFor({ item: { name: 'Bow', system: { r: { value: 80, long: 320 } } } });
-  assert.deepEqual(spec.bands.map(b => [b.max, b.mark ?? null]), [[80, null], [320, 'Long']]);
-});
-
 test('generic: auto-detect shapes and scene units', () => {
-  const metric = createGenericAdapter({ rangeField: () => '', units: () => 'm' });
+  const metric = createGenericAdapter({ units: () => 'm' });
   assert.equal(metric.specFor({ item: { name: 'Spear', system: { range: 9 } } }).bands[0].label, '9 m');
   assert.equal(metric.specFor({ item: { name: 'Spear', system: { range: { value: 9, units: 'm' } } } }).kind, 'radius');
   assert.equal(metric.specFor({ item: { name: 'Rope', system: { range: { value: 0 } } } }).kind, 'none');
@@ -51,7 +41,7 @@ test('generic: auto-detect shapes and scene units', () => {
 });
 
 test('generic listItems groups by item type and skips items without a range', () => {
-  const adapter = createGenericAdapter({ rangeField: () => '', units: () => 'ft' });
+  const adapter = createGenericAdapter({ units: () => 'ft' });
   const items = [
     { name: 'Bow', type: 'weapon', system: { range: 60 } },
     { name: 'Bolt', type: 'spell', system: { range: 120 } },

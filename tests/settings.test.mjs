@@ -18,7 +18,7 @@ test('registers every setting with the spec defaults and scopes', () => {
   const expected = {
     bandStyle: ['client', 'both'], bandOpacity: ['client', 1], showLabels: ['client', true], badgeScale: ['client', 1],
     palette: ['client', 'default'], dimBehindWalls: ['client', false], ghostMode: ['client', 'fade'],
-    ghostPersistentHud: ['client', false], allowSharing: ['world', true], badgesCombatOnly: ['world', false], rangeField: ['world', ''], tokenHudButton: ['client', true], genericSheetRows: ['client', true]
+    ghostPersistentHud: ['client', false], allowSharing: ['world', true], badgesCombatOnly: ['world', false], tokenHudButton: ['client', true]
   };
   assert.deepEqual([...settings.registered.keys()].sort(), Object.keys(expected).sort());
   for (const [key, [scope, value]] of Object.entries(expected)) {
@@ -32,15 +32,6 @@ test('registers every setting with the spec defaults and scopes', () => {
   assert.deepEqual(Object.keys(settings.registered.get('ghostMode').choices), ['fade', 'minimize', 'off']);
   assert.equal(settings.registered.get('ghostMode').choices.fade, 'RANGE_FINDER.Settings.ghostMode.Choices.fade');
   assert.deepEqual(settings.registered.get('bandOpacity').range, { min: 0.3, max: 1.5, step: 0.1 });
-});
-
-test('rangeField is hidden for systems with a built-in adapter, visible otherwise', () => {
-  for (const [systemId, config] of [['pf2e', false], ['sf2e', false], ['dnd5e', false], ['daggerheart', false], ['draw-steel', false], ['crucible', false], ['swade', true], [null, true]]) {
-    const settings = fakeSettings();
-    registerSettings(() => {}, settings, undefined, systemId);
-    assert.equal(settings.registered.get('rangeField').config, config, String(systemId));
-    assert.equal(settings.registered.get('tokenHudButton').config, true, String(systemId));
-  }
 });
 
 test('readSettings returns every key', () => {

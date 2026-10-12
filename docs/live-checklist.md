@@ -74,7 +74,7 @@ Setup: square grid (5 ft), a character with a longbow, dagger, glaive, Fire Bolt
 - [ ] Character sheet: 📏 on weapons and domain cards / features with a ranged action; adversary sheet: 📏 on its attack. Pressing 📏 on a compact row does not expand / collapse it.
 - [ ] Close weapon: Melee / Very Close / Close bands (5 / 15 / 30 ft); a Very Far action draws to 300 ft and is labelled `Very Far · 60+ ft`.
 - [ ] Badges agree with the system's own range check (target hover distance): a target 6 squares diagonal reads `40 ft` and is out of Close range; a Very Far target past 300 ft shows `✓`.
-- [ ] Custom scene range settings (scene config) change the bands; "Range field" is not in the module settings.
+- [ ] Custom scene range settings (scene config) change the bands.
 
 ## Draw Steel world
 
@@ -92,4 +92,3 @@ Setup: square grid (5 ft), a character with a longbow, dagger, glaive, Fire Bolt
 ## Other system (generic)
 
 - [ ] A system with `system.range` numbers: Token HUD 📏 and item sheet 📏 show ranges.
-- [ ] Set **Range field** to a custom path: ranges come from it; clearing it falls back to auto-detect.

@@ -1,15 +1,10 @@
-/** Fallback adapter: a GM-chosen data path (world setting `rangeField`) or an auto-detected item.system.range. */
+/** Fallback adapter for systems without their own: an auto-detected item.system.range. */
 import { makeSpec, noneSpec, showsButton, singleBand } from '../core/spec.mjs';
 import { sceneUnits } from '../canvas/geometry.mjs';
 import { defaultCellMeasure, defaultDistance } from './measure.mjs';
 import { getPath, itemsOf } from './util.mjs';
-import { createGenericRows } from './generic-rows.mjs';
 
 export { getPath };
-
-const settingField = () => {
-  try { return globalThis.game?.settings?.get?.('range-finder', 'rangeField') ?? ''; } catch { return ''; }
-};
 
 /** A number (or numeric string), `{ value, long }` or `{ value, units }` → `{ value, long }`; else null. */
 export function readRange(raw) {
@@ -26,17 +21,12 @@ export function readRange(raw) {
 
 const groupOf = item => (item.type === 'weapon' ? 'attacks' : item.type === 'spell' ? 'spells' : 'other');
 
-const rowsEnabled = () => {
-  try { return globalThis.game?.settings?.get?.('range-finder', 'genericSheetRows') ?? true; } catch { return true; }
-};
-
-export function createGenericAdapter({ rangeField = settingField, units = sceneUnits, rowsEnabled: rowsOn = rowsEnabled } = {}) {
+export function createGenericAdapter({ units = sceneUnits } = {}) {
   function specFor({ item, units: given } = {}) {
     if (!item) return noneSpec();
     const name = item.name ?? '';
     const u = given ?? units();
-    const path = String(rangeField() ?? '').trim();
-    const range = (path ? readRange(getPath(item, path)) : null) ?? readRange(item.system?.range);
+    const range = readRange(item.system?.range);
     if (!range) return noneSpec(null, name);
     const bands = singleBand(range.value, 'base', null, u);
     if (range.long > range.value) {
@@ -51,7 +41,7 @@ export function createGenericAdapter({ rangeField = settingField, units = sceneU
       .map(item => ({ item, actionIndex: null, group: groupOf(item) }));
   }
 
-  return { id: 'generic', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, listItems, rows: createGenericRows({ enabled: rowsOn }) };
+  return { id: 'generic', specFor, cellMeasure: defaultCellMeasure, distance: defaultDistance, listItems, rows: [] };
 }
 
 export const genericAdapter = createGenericAdapter();

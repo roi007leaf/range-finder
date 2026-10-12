@@ -122,7 +122,7 @@ function rootOf(html, app) {
 }
 
 Hooks.once('init', () => {
-  registerSettings(() => { pins?.rebuild(); schedule(); }, undefined, undefined, game.system.id);
+  registerSettings(() => { pins?.rebuild(); schedule(); });
   game.keybindings.register(MODULE_ID, 'preview', {
     name: 'RANGE_FINDER.Keys.Preview.Name', hint: 'RANGE_FINDER.Keys.Preview.Hint',
     editable: [{ key: 'AltLeft' }],

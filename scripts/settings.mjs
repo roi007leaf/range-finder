@@ -13,16 +13,12 @@ export const SETTINGS = {
   ghostPersistentHud: { scope: 'client', type: Boolean, default: false },
   allowSharing: { scope: 'world', type: Boolean, default: true },
   badgesCombatOnly: { scope: 'world', type: Boolean, default: false },
-  rangeField: { scope: 'world', type: String, default: '' },
-  tokenHudButton: { scope: 'client', type: Boolean, default: true },
-  genericSheetRows: { scope: 'client', type: Boolean, default: true }
+  tokenHudButton: { scope: 'client', type: Boolean, default: true }
 };
 
 // Foundry localizes setting names, hints and choices itself, so the default localize is the identity.
-const BUILT_IN_SYSTEMS = new Set(['pf2e', 'sf2e', 'dnd5e', 'daggerheart', 'draw-steel', 'crucible']);
 
-// The range field is only for systems without a built-in adapter, so it's hidden for the rest.
-export function registerSettings(onChange, settings = game.settings, localize = key => key, systemId = null) {
+export function registerSettings(onChange, settings = game.settings, localize = key => key) {
   for (const [key, data] of Object.entries(SETTINGS)) {
     const localized = data.choices
       ? { ...data, choices: Object.fromEntries(Object.entries(data.choices).map(([value, label]) => [value, localize(label)])) }
@@ -30,7 +26,7 @@ export function registerSettings(onChange, settings = game.settings, localize = 
     settings.register(MODULE_ID, key, {
       name: localize(`RANGE_FINDER.Settings.${key}.Name`),
       hint: localize(`RANGE_FINDER.Settings.${key}.Hint`),
-      config: !(key === 'rangeField' && BUILT_IN_SYSTEMS.has(systemId)),
+      config: true,
       ...localized,
       onChange
     });

@@ -27,7 +27,7 @@ Works on square grids (per-square bands) and hex/gridless scenes (rings). Area s
 - **Draw Steel** — ability distances in squares (melee, ranged, melee-or-ranged, aura / burst, cube / wall / line "within"); ability rows on the sheet.
 - **Crucible** — weapon ranges and actions (strikes, talents, spells) with minimum / maximum range, measured base to base; action, inventory, talent, spell and sidebar rows.
 
-Any other system gets the generic fallback (Token HUD and item sheet 📏, see [Other systems](#other-systems)). Want proper support for yours? Open an issue to request an adapter.
+Any other system gets a generic fallback: the Token HUD list and the item sheet header 📏 button, reading `system.range` (see [Other systems](#other-systems)). Adapters for more systems are added on request, so open an issue to ask for yours.
 
 ## Keybindings
 
@@ -54,11 +54,10 @@ Rebindable in **Configure Controls**.
 | Token HUD button | client | on |
 | Allow sharing | world | on |
 | Badges only in combat | world | off |
-| Range field (other systems) | world | empty (auto-detect) |
 
 ## Other systems
 
-Without a built-in adapter, Range Finder reads `system.range` on items: a number, `{ value, long }` (long range is marked `Long`) or `{ value, units }`, in the scene's units. If your system keeps the range elsewhere, a GM can set **Range field** to that item data path (e.g. `system.attack.range`). Use the Token HUD 📏 or the item sheet 📏 to show it.
+Without a built-in adapter, Range Finder reads `system.range` on items: a number, `{ value, long }` (long range is marked `Long`) or `{ value, units }`, in the scene's units. Use the Token HUD 📏 or the item sheet 📏 to show it.
 
 ## For developers
 
