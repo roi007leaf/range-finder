@@ -5,7 +5,7 @@ import { Triggers } from '../scripts/ui/Triggers.mjs';
 import { classifyTargets } from '../scripts/core/targets.mjs';
 import { createCrucibleAdapter, crucibleAdapter, effectiveRange, baseToBase } from '../scripts/adapters/crucible.mjs';
 import { getAdapter } from '../scripts/adapters/index.mjs';
-import { DIAGONALS } from '../scripts/core/cells.mjs';
+import { DIAGONALS, bandCells } from '../scripts/core/cells.mjs';
 
 const format = (key, data) => (key === 'ITEM.PROPERTIES.Range' ? `Range ${data.range}` : key);
 const cr = createCrucibleAdapter({ units: () => 'ft', format });
@@ -142,6 +142,36 @@ test('cellMeasure: base-to-base between cells (an adjacent cell is 0)', () => {
   assert.equal(measure({ i: 0, j: 0 }, { i: 1, j: 1 }), 0);
   assert.equal(measure({ i: 0, j: 0 }, { i: 0, j: 2 }), 5);
   assert.equal(measure({ i: 0, j: 0 }, { i: 3, j: 2 }), 10);
+});
+
+test('bands reach as far as distance(): the farthest painted cell is max/unit + 1 out (base-to-base)', () => {
+  const measure = cr.cellMeasure(null, 5, DIAGONALS.EQUIDISTANT);
+  for (const [max, farthest] of [[5, 2], [10, 3], [30, 7]]) {
+    const bands = [{ min: 0, max, penalty: 0, tone: 'base', label: '' }];
+    const [cells] = bandCells({ originCells: [{ i: 20, j: 20 }], bands, measure, unit: 5 });
+    const reach = Math.max(...cells.map(c => Math.max(Math.abs(c.i - 20), Math.abs(c.j - 20))));
+    assert.equal(reach, farthest, `${max} ft`);
+  }
+});
+
+test('pins of unlinked tokens: a world-actor action uuid resolves against the synthetic actor', () => {
+  const synthetic = { ...actor, uuid: 'Scene.s.Token.t.Actor.a' };
+  assert.equal(cr.resolveItem(synthetic, 'Actor.a.Action.lunge')?.name, 'Lunge');
+  assert.equal(cr.resolveItem(synthetic, 'Actor.a.Action.spell.flame.ray.none')?.name, 'Firebolt');
+  assert.equal(cr.resolveItem(synthetic, 'Scene.s.Token.t.Actor.a.Action.lunge')?.name, 'Lunge');
+  assert.equal(cr.resolveItem(synthetic, 'Actor.b.Action.lunge'), null);
+  // No item at all (fromUuidSync and resolveItem both missed): the action id alone is enough.
+  assert.equal(cr.specFor({ actor: synthetic, item: null, actionIndex: 'lunge' }).bands[0].max, 6);
+  assert.equal(cr.specFor({ actor: synthetic, item: null, actionIndex: 'nope' }).kind, 'none');
+  assert.equal(cr.specFor({ item: null }).kind, 'none');
+});
+
+test('listItems skips actions hidden from the sheet and movement actions', () => {
+  const hidden = { ...action('hidden', 'Hidden', { maximum: 30, category: 'ranged' }), suppressFromSheet: true };
+  const charge = { ...action('charge', 'Charge', { weapon: true, maximum: 30, category: 'melee' }, { tags: ['strike'] }), target: { type: 'movement' } };
+  const names = cr.listItems({ ...actor, actions: { ...actor.actions, hidden, charge } }).map(e => e.item.name);
+  assert.ok(!names.includes('Hidden') && !names.includes('Charge'));
+  assert.ok(names.includes('Lunge'));
 });
 
 test('default instance and registry', () => {

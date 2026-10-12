@@ -9,8 +9,8 @@
  * `range = { minimum, maximum, weapon, category }`. The system rejects targets when
  * `range < minimum` or `range > maximum` (CrucibleAction target acquisition), so the band is [minimum, maximum]
  * and anything closer than the minimum is out of range. With `range.weapon` the strike tag sets
- * `maximum = max(maximum, source maximum + the struck weapons' smallest range)`; that is mirrored here when the
- * prepared maximum is missing. `category` none → no range; melee → reach tone.
+ * `maximum = max(maximum, source maximum + the struck weapons' smallest range)` while the actor prepares, so actor
+ * actions already carry it; effectiveRange only re-applies it for actions not prepared with their strikes. `category` none → no range; melee → reach tone.
  *
  * Distances are base-to-base (crucible.api.canvas.grid.getLinearRangeCost): adjacent tokens are 0 ft apart,
  * which is why a 1 ft sword reaches the next square. Band cells are measured the same way.
@@ -41,7 +41,12 @@ export function baseToBase(aCells, bCells, unit = 5, rule = sceneRule()) {
   return best === Infinity ? NaN : best;
 }
 
-/** The action's [minimum, maximum] as the system checks targets against it. */
+/**
+ * The action's [minimum, maximum] as the system checks targets against it. Prepared actor actions already fold
+ * the strike weapon range into `range.maximum` (the strike tag's prepare, except movement actions), so for them
+ * this is just range.minimum / range.maximum; the weapon fold here only matters for actions not yet prepared
+ * with their strikes (e.g. item-bound actions read before the actor's preparation), and is a no-op otherwise.
+ */
 export function effectiveRange(action) {
   const range = action?.range ?? {};
   let max = num(range.maximum);
@@ -129,9 +134,10 @@ export function createCrucibleAdapter({ units = sceneUnits, format = systemForma
   }
 
   function specFor({ actor = null, item, actionIndex = null, units: given } = {}) {
-    if (!item) return noneSpec();
-    const name = item.name ?? '';
     const u = given ?? units();
+    // A pin whose action handle could not be rebuilt still names the action: resolve it on the token's actor.
+    if (!item) return actor && actionIndex !== null && actionIndex !== undefined ? actionSpec(actor.actions?.[actionIndex], '', u) : noneSpec();
+    const name = item.name ?? '';
     const owner = ownerOf(actor, item);
     if (actionIndex !== null && actionIndex !== undefined) return actionSpec(owner?.actions?.[actionIndex], name, u);
     if (isWeapon(item)) {
@@ -148,11 +154,18 @@ export function createCrucibleAdapter({ units = sceneUnits, format = systemForma
 
   const rangeLabel = spec => spec?.bands?.at(-1)?.label ?? spec?.note ?? '';
 
-  /** Action pins carry "<actor uuid>.Action.<id>". */
+  /**
+   * Action pins carry "<actor uuid>.Action.<id>". A sheet opened from the world actor gives "Actor.<id>.Action.…"
+   * while an unlinked token's actor is "Scene.….Token.….Actor.<id>", so match the actor id, not the whole prefix.
+   * The action id is everything after the last ".Action." (ids may contain dots).
+   */
   function resolveItem(actor, uuid) {
-    const prefix = actor?.uuid ? `${actor.uuid}.Action.` : null;
-    if (!prefix || !String(uuid ?? '').startsWith(prefix)) return null;
-    const id = uuid.slice(prefix.length);
+    const text = String(uuid ?? '');
+    const at = text.lastIndexOf('.Action.');
+    if (!actor?.id || at < 0) return null;
+    const owner = /(?:^|\.)Actor\.([^.]+)$/.exec(text.slice(0, at))?.[1];
+    if (owner !== actor.id) return null;
+    const id = text.slice(at + '.Action.'.length);
     const action = actor.actions?.[id];
     return action ? actionHandle(actor, id, action) : null;
   }
@@ -161,13 +174,16 @@ export function createCrucibleAdapter({ units = sceneUnits, format = systemForma
     const weapons = itemsOf(actor)
       .filter(item => isWeapon(item) && showsButton(specFor({ actor, item })))
       .map(item => ({ item, actionIndex: null, group: 'attacks' }));
+    // Like the sheet's actions tab: no suppressFromSheet actions; movement actions (target.type) have no target range.
     const actions = actionsOf(actor)
+      .filter(([, action]) => !action.suppressFromSheet && action.target?.type !== 'movement')
       .filter(([id]) => showsButton(specFor({ actor, item: actor, actionIndex: id })))
       .map(([id, action]) => ({ item: actionHandle(actor, id, action), actionIndex: id, group: groupOf(action) }));
     return [...weapons, ...actions];
   }
 
-  const cellMeasure = (_spec, unit = 5, rule = sceneRule()) => Object.assign((from, to) => cellGap(from, to, unit, rule), { bandSensitive: () => false });
+  // pad: base-to-base, a cell N ft away is N/unit + 1 cells out, one past bandCells' default window.
+  const cellMeasure = (_spec, unit = 5, rule = sceneRule()) => Object.assign((from, to) => cellGap(from, to, unit, rule), { bandSensitive: () => false, pad: 1 });
 
   /** The system's own base-to-base range; otherwise base-to-base over occupied cells (square grids). */
   function distance(source, target, _spec, c = globalThis.canvas) {

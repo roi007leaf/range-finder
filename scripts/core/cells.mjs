@@ -42,11 +42,14 @@ export function edgeDistance(aCells, bCells, unit = 5, rule = DIAGONALS.ALTERNAT
  * Group the cells around `originCells` by the first band they fall in.
  * `measure(from, to, band)` may carry a `bandSensitive(band)` predicate: then each cell is measured once
  * (band-independent, `measure(from, to)`) and re-measured only for bands the predicate flags.
+ * `measure.pad` (optional) widens the scanned window by that many cells, for measures where a cell N units
+ * away sits more than N/unit cells out (Crucible's base-to-base: an adjacent cell is 0).
  */
 export function bandCells({ originCells, bands, measure, unit = 5, bounds = null }) {
   const groups = bands.map(() => []);
   if (!originCells?.length || !bands.length) return groups;
-  const steps = Math.ceil(Math.max(...bands.map(band => band.max)) / unit);
+  const pad = Math.max(0, Math.ceil(Number(measure.pad) || 0));
+  const steps = Math.ceil(Math.max(...bands.map(band => band.max)) / unit) + pad;
   let i0 = Infinity, i1 = -Infinity, j0 = Infinity, j1 = -Infinity;
   for (const { i, j } of originCells) {
     i0 = Math.min(i0, i); i1 = Math.max(i1, i);
