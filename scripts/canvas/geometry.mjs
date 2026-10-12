@@ -22,6 +22,7 @@ export function sceneGeometry(canvas) {
     unit: grid.distance,
     bounds: { rows: dimensions.rows, cols: dimensions.columns },
     pxPerFoot: dimensions.size / dimensions.distance,
+    zoom: canvas.stage?.scale?.x ?? 1,
     topLeft: (i, j) => grid.getTopLeftPoint({ i, j }),
     originCells: token => token.document.getOccupiedGridSpaceOffsets(),
     center: token => token.center,

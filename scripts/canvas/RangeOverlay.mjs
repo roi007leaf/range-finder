@@ -9,6 +9,14 @@ export const LABEL_Z_INDEX = 1000;
 const reducedMotion = () => Boolean(globalThis.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches);
 const defaultFrame = () => (typeof globalThis.requestAnimationFrame === 'function' ? fn => globalThis.requestAnimationFrame(fn) : null);
 
+const LABEL_FONT = 13;
+
+/** Screen-constant label size: inverse of the canvas zoom, clamped to [0.5, 3]. */
+export function labelScale(zoom = 1) {
+  const z = Number(zoom) > 0 ? Number(zoom) : 1;
+  return Math.min(3, Math.max(0.5, 1 / z));
+}
+
 export class RangeOverlay {
   /** Fade start time per pin key; survives the per-draw layer rebuild. */
   #fades = new Map();
@@ -167,7 +175,7 @@ export class RangeOverlay {
   }
 
   #pill(text, s, geo) {
-    const label = this.makeText(text, { fontSize: Math.max(11, Math.round(geo.size * 0.22)), fill: s.text });
+    const label = this.makeText(text, { fontSize: LABEL_FONT, fill: s.text });
     const pad = 4;
     const box = new this.PIXI.Graphics();
     box.beginFill(s.halo, 0.75);
@@ -177,6 +185,8 @@ export class RangeOverlay {
     label.position.set(pad, pad / 2);
     const pill = new this.PIXI.Container();
     pill.addChild(box, label);
+    // Keep labels the same size on screen at any zoom (clamped so they never swamp the map).
+    pill.scale.set(labelScale(geo.zoom));
     return pill;
   }
 

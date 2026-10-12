@@ -221,3 +221,21 @@ test('sceneUnits reads Scene#grid.units with an ft fallback', () => {
   assert.equal(sceneUnits({ scene: { grid: { units: '' } } }), 'ft');
   assert.equal(sceneUnits(null), 'ft');
 });
+
+test('band labels keep a constant on-screen size: scale = 1/zoom, clamped to [0.5, 3]', async () => {
+  const { labelScale } = await import('../scripts/canvas/RangeOverlay.mjs');
+  assert.equal(labelScale(1), 1);
+  assert.equal(labelScale(0.5), 2);
+  assert.equal(labelScale(2), 0.5);
+  assert.equal(labelScale(0.1), 3);
+  assert.equal(labelScale(8), 0.5);
+  assert.equal(labelScale(0), 1);
+  assert.equal(labelScale(undefined), 1);
+  const { PIXI } = fakePIXI();
+  const parent = new Container(), labelParent = new Container();
+  const o = new RangeOverlay({ parent, labelParent, PIXI, makeText: () => new Container(), settings: () => baseSettings });
+  o.draw([{ pin: pin(reach), token, adapter: pf2eAdapter, tint: null, ownerName: null }], { ...fakeGeo(), zoom: 0.5 });
+  const pills = o.labels.children[0].children;
+  assert.ok(pills.length > 0);
+  assert.ok(pills.every(p => p.scale.value === 2));
+});
