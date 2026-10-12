@@ -4,7 +4,7 @@ import { JSDOM } from 'jsdom';
 import { Triggers } from '../scripts/ui/Triggers.mjs';
 import { makeSpec, noneSpec, singleBand } from '../scripts/core/spec.mjs';
 
-function setup({ token = { id: 't1' }, settings = {} } = {}) {
+function setup({ token = { id: 't1' }, settings = {}, onPreview } = {}) {
   const dom = new JSDOM(`<div class="application" id="sheet">
       <ul><li class="row" data-id="bow"><span class="name">Bow</span></li>
           <li class="row" data-id="wish"><span class="name">Wish</span></li>
@@ -21,7 +21,7 @@ function setup({ token = { id: 't1' }, settings = {} } = {}) {
   const adapter = {
     specFor: ({ item }) => item.spec,
     rows: [
-      { hooks: ['renderSheet'], selector: 'li.row', resolve: el => ({ actor, item: items[el.dataset.id], actionIndex: null }), host: el => el.querySelector('.name') },
+      { hooks: ['renderSheet'], selector: 'li.row', resolve: el => ({ actor, item: items[el.dataset.id], actionIndex: null }), host: el => el.querySelector('.name'), onPreview },
       { hooks: ['renderHud'], selector: '.slot', resolve: el => ({ actor, item: items[el.dataset.id], actionIndex: null }), persistentHud: true }
     ]
   };
@@ -247,4 +247,52 @@ test('an Alt click made while the preview key is not held does not block the nex
   normal.dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
   triggers.keyDown();
   assert.deepEqual(calls.map(c => c[0]), ['preview']);
+});
+
+const hoverBow = (doc, dom) => doc.querySelector('[data-id="bow"]').dispatchEvent(new dom.window.Event('pointerover', { bubbles: true }));
+
+test('onPreview runs on preview start with the row; restore runs after endPreview on keyUp', () => {
+  const order = [];
+  let seen;
+  const { doc, dom, triggers, calls } = setup({ onPreview: row => { seen = row; order.push('onPreview'); return () => order.push(`restore:${calls.map(c => c[0]).join(',')}`); } });
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  triggers.keyDown();
+  hoverBow(doc, dom);
+  assert.equal(seen, doc.querySelector('[data-id="bow"]'));
+  assert.deepEqual(order, ['onPreview']);
+  triggers.keyUp();
+  assert.deepEqual(order, ['onPreview', 'restore:preview,endPreview']);
+  triggers.keyUp();
+  assert.equal(order.length, 2, 'restore runs once');
+});
+
+test('onPreview is not called for a plain click pin', () => {
+  let called = 0;
+  const { doc, dom, triggers } = setup({ onPreview: () => { called++; return () => called++; } });
+  triggers.decorate(doc.getElementById('sheet'), {}, 'renderSheet');
+  doc.querySelector('[data-id="bow"] .range-finder-btn').dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true }));
+  triggers.keyUp();
+  assert.equal(called, 0);
+});
+
+test('a throwing onPreview or restore does not break the preview', () => {
+  const quiet = console.error;
+  console.error = () => {};
+  try {
+    const a = setup({ onPreview: () => { throw new Error('boom'); } });
+    a.triggers.decorate(a.doc.getElementById('sheet'), {}, 'renderSheet');
+    a.triggers.keyDown();
+    hoverBow(a.doc, a.dom);
+    assert.deepEqual(a.calls.map(c => c[0]), ['preview']);
+    a.triggers.keyUp();
+    assert.deepEqual(a.calls.map(c => c[0]), ['preview', 'endPreview']);
+    const b = setup({ onPreview: () => () => { throw new Error('boom'); } });
+    b.triggers.decorate(b.doc.getElementById('sheet'), {}, 'renderSheet');
+    b.triggers.keyDown();
+    hoverBow(b.doc, b.dom);
+    b.triggers.keyUp();
+    assert.deepEqual(b.calls.map(c => c[0]), ['preview', 'endPreview']);
+  } finally {
+    console.error = quiet;
+  }
 });

@@ -11,7 +11,6 @@ Setup: square-grid scene, a PF2e character with longbow, dagger, whip, a fist (b
 - [ ] Hold Alt over a spell row: lighter preview; release clears; sheet restores.
 - [ ] Alt+Tab while previewing doesn't leave a stuck preview.
 - [ ] Esc clears pins and restores windows.
-- [ ] With a range shown, press J: faded windows return solid and clickable, range still drawn; press J again: faded again; a new pin re-fades them; Esc restores.
 - [ ] Shift+click: second client sees the range tinted with the sharer's color and the owner label; unpin clears it there; GM "clear shared" tool clears all.
 - [ ] Two-client test: a shared pin's unpin from another player can't be spoofed (sender check).
 - [ ] pf2e-hud actions/spells sidebars and shortcuts show 📏 and work; pinning from a sidebar fades only the sidebar (the persistent bar too if "Also hide PF2e HUD bar" is on); the faded sidebar is click-through; unpin restores all.
@@ -43,6 +42,7 @@ Setup: square-grid scene, a PF2e character with longbow, dagger, whip, a fist (b
 - [ ] Reach-N weapon with the Lunge toggle on: strike and Trip reach +5; without the toggle unchanged. Whip + Lunge: the system's value (not +10).
 - [ ] Far Shot longbow: bands to 1200 ft (system value), not 2400.
 - [ ] Reach Spell owned: spell 📏 tooltip says "Alt+click: with Reach Spell"; point at 📏, hold Alt, click → `Reach Spell 60 ft` for Electric Arc, 30 ft for Shocking Grasp; no preview started while pointing at the 📏; plain click shows the normal range. Second client sees the shared variant.
+- [ ] Hold Alt over a pf2e-hud sidebar weapon, drag your token, release Alt → the sidebar reopens on the same tab.
 - [ ] Alt+click on a variant 📏 works while its window is faded (pin a range from the sheet, then Alt+click a variant 📏 on the faded sheet).
 - [ ] Galloping Launch / Throw and Catch Alt+click variants work on a melee weapon with thrown-N (e.g. a dagger or spear) as well as on thrown weapons.
 - [ ] Token HUD 📏: list grouped Attacks / Spells / Skill actions / Other with range labels (`100/600 ft`, `Reach 10 ft`, `30 ft`); only items with a range or a note are listed; Wish is disabled with its note as tooltip; row click pins for *that* token (try two unlinked tokens of one actor); Shift+click shares; Alt held over a row previews; Esc and closing the HUD close the list; the list never fades.

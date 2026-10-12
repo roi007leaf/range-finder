@@ -13,7 +13,7 @@ See an item's, attack's, spell's or skill action's range right on the canvas —
 - **PF2e skill actions**: Demoralize 30 ft, Feint at your reach, Shove/Trip/Disarm/Grapple/Reposition at your best matching weapon's reach (ranged trip at –2), healing and thievery actions (Steal, Palm an Object) adjacent, 70+ feat actions (Bon Mot, Battle Medicine, Terrifying Howl…). Dimensional Pilfer (60 ft) and Thief of Moonlight (30 ft) are their own feat-action rows, not modifiers of Steal / Palm an Object. Owned feats that change ranges are applied (Legendary Laugh, Mage's Field Dressing, Hydraulic Maneuvers while toggled, Lunge with reach-N weapons…); ones PF2e already applies (Far Shot, Enlarge…) are read from the system, never doubled.
 - **Target badges**: every visible token shows `45 ft · –2`, `✓`, the band's mark (`Disadv.`) or `✗`.
 - **Any scene**: labels use the scene's units (`m` scenes show `7.5 m`); distances follow the scene's diagonal rule and measure edge to edge (PF2e/SF2e keep their own rules).
-- **Gets out of the way**: the window you clicked from fades while the range is shown; from PF2e HUD only the open sidebar fades (the persistent bar too if you enable *Also hide PF2e HUD bar*, off by default); press **J** to bring faded windows back (and again to fade them). The Token HUD list never fades. In *Minimize* mode, windows that aren't a minimizable application (such as frameless PF2e HUD sidebars) are left as they are.
+- **Gets out of the way**: the window you clicked from fades while the range is shown; from PF2e HUD only the open sidebar fades (the persistent bar too if you enable *Also hide PF2e HUD bar*, off by default); faded windows are click-through and come back when the range is cleared (Esc, unpin) or the preview key is released. If a PF2e HUD sidebar closes while you preview from it (e.g. you drag a token), it reopens on the same tab when you release the key. The Token HUD list never fades. In *Minimize* mode, windows that aren't a minimizable application (such as frameless PF2e HUD sidebars) are left as they are.
 - Optional: hatch squares without line of effect, colorblind palette, outline-only bands.
 
 Works on square grids (per-square bands) and hex/gridless scenes (rings). Built in: PF2e, SF2e, D&D 5e (6.x). Other systems use a generic adapter (see below). Area shapes (bursts, cones) are not drawn — ranges only.
@@ -26,7 +26,6 @@ Rebindable in **Configure Controls**.
 |---|---|
 | Preview hovered range | Alt |
 | Clear my ranges | Esc |
-| Show/hide faded windows | J |
 | Clear shared ranges (GM) | unbound |
 
 ## Settings

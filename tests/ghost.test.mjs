@@ -48,58 +48,6 @@ test('no pointermove listener is registered', () => {
   assert.equal(ghost.onMove, undefined);
 });
 
-test('toggleRevealed un-fades fade entries, leaves minimize entries, and toggles back', () => {
-  const app = { minimized: false, minimize() {}, maximize() {} };
-  let mode = 'fade';
-  const a = element(), b = element(), m = element();
-  const ghost = new Ghost({ doc: doc(), mode: () => mode, appFor: () => app });
-  ghost.hold([a, b], { sticky: true });
-  mode = 'minimize';
-  ghost.hold(m, { sticky: true });
-  assert.equal(ghost.revealed, false);
-  assert.equal(ghost.toggleRevealed(), true);
-  assert.equal(ghost.revealed, true);
-  assert.ok(!a.classList.contains(GHOST_CLASS) && !b.classList.contains(GHOST_CLASS));
-  assert.ok(!m.classList.contains(GHOST_CLASS));
-  assert.ok(ghost.isGhosted(a) && ghost.isGhosted(m));
-  assert.equal(ghost.toggleRevealed(), true);
-  assert.equal(ghost.revealed, false);
-  assert.ok(a.classList.contains(GHOST_CLASS) && b.classList.contains(GHOST_CLASS));
-  assert.ok(!m.classList.contains(GHOST_CLASS));
-});
-
-test('toggleRevealed with nothing held is a no-op returning false', () => {
-  const ghost = new Ghost({ doc: doc() });
-  assert.equal(ghost.toggleRevealed(), false);
-  assert.equal(ghost.revealed, false);
-});
-
-test('a new hold while revealed re-fades everything and clears revealed', () => {
-  const a = element(), b = element(), ghost = new Ghost({ doc: doc() });
-  ghost.hold(a, { sticky: true });
-  ghost.toggleRevealed();
-  ghost.hold(b, { sticky: false });
-  assert.equal(ghost.revealed, false);
-  assert.ok(a.classList.contains(GHOST_CLASS) && b.classList.contains(GHOST_CLASS));
-  ghost.toggleRevealed();
-  ghost.hold(a, { sticky: false });
-  assert.equal(ghost.revealed, false);
-  assert.ok(a.classList.contains(GHOST_CLASS) && b.classList.contains(GHOST_CLASS));
-});
-
-test('releasing all holds resets revealed', () => {
-  const el = element(), ghost = new Ghost({ doc: doc() });
-  ghost.hold(el, { sticky: true });
-  ghost.toggleRevealed();
-  ghost.release(el, { sticky: true });
-  assert.equal(ghost.revealed, false);
-  ghost.hold(el, { sticky: true });
-  ghost.toggleRevealed();
-  ghost.releaseAll();
-  assert.equal(ghost.revealed, false);
-  assert.ok(!el.classList.contains(GHOST_CLASS));
-});
-
 test('minimize mode', () => {
   const calls = [];
   const app = { minimized: false, minimize: () => calls.push('min'), maximize: () => calls.push('max') };

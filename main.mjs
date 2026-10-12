@@ -122,12 +122,6 @@ Hooks.once('init', () => {
     onDown: () => clearLocal(),
     precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY
   });
-  game.keybindings.register(MODULE_ID, 'revealWindows', {
-    name: 'RANGE_FINDER.Keys.Reveal.Name', hint: 'RANGE_FINDER.Keys.Reveal.Hint',
-    editable: [{ key: 'KeyJ' }],
-    onDown: () => ghost?.toggleRevealed() ?? false,
-    precedence: CONST.KEYBINDING_PRECEDENCE.PRIORITY
-  });
   game.modules.get(MODULE_ID).api = api;
   game.keybindings.register(MODULE_ID, 'clearShared', {
     name: 'RANGE_FINDER.Keys.ClearShared.Name', hint: 'RANGE_FINDER.Keys.ClearShared.Hint',

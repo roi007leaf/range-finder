@@ -16,6 +16,7 @@ export class Triggers {
   #keyHeld = false;
   #overAlt = false;
   #altClick = false;
+  #restore = null;
 
   constructor({ adapter, pins, resolveToken, notify = () => {}, localize = key => key, settings = () => ({}), doc = globalThis.document }) {
     Object.assign(this, { adapter, pins, resolveToken, notify, localize, settings, doc });
@@ -45,7 +46,7 @@ export class Triggers {
       if (!ctx?.actor || !ctx?.item) return;
       const spec = this.adapter.specFor(ctx);
       if (!showsButton(spec)) return;
-      this.#rows.set(el, { ctx, def });
+      this.#rows.set(el, { ctx, def, app });
       el.setAttribute(ROW_ATTR, '');
       if (def.wholeRow) {
         el.classList.add(ROW_BUTTON_CLASS);
@@ -169,7 +170,15 @@ export class Triggers {
   #startPreview() {
     if (this.pins.previewing || this.#overAlt || this.#altClick || !this.#hovered?.isConnected) return;
     const request = this.#request(this.#hovered, { quiet: true });
-    if (request) this.pins.preview(request);
+    if (!request) return;
+    this.#restore = null;
+    try {
+      const { def, app } = this.#rows.get(this.#hovered);
+      this.#restore = def.onPreview?.(this.#hovered, app) ?? null;
+    } catch (error) {
+      console.error('Range Finder |', error);
+    }
+    this.pins.preview(request);
   }
 
   keyDown() {
@@ -182,5 +191,12 @@ export class Triggers {
     this.#keyHeld = false;
     this.#altClick = false;
     this.pins.endPreview();
+    const restore = this.#restore;
+    this.#restore = null;
+    try {
+      restore?.();
+    } catch (error) {
+      console.error('Range Finder |', error);
+    }
   }
 }

@@ -23,6 +23,36 @@ const controlsHost = el => el.querySelector(':scope .item-controls, :scope .cont
 // pf2e-hud sidebar rows: their `.controls` are ammo/variant strips, so use the name line.
 const nameHost = el => el.querySelector(':scope .name') ?? el;
 
+const SIDEBAR_ID = 'pf2e-hud-sidebar';
+
+/**
+ * Alt-previewing a pf2e-hud sidebar row while dragging a token closes the sidebar (it closes on any
+ * board mousedown). Returns a function that reopens the sidebar that was open when the preview began.
+ * `openSidebar` must be called on the class owning that static (private-static brand checks).
+ */
+export function hudSidebarRestore(row, app, registry = globalThis.foundry?.applications?.instances) {
+  try {
+    const instance = registry?.get?.(SIDEBAR_ID);
+    if (!instance) return null;
+    let Base = instance.constructor;
+    while (Base && !Object.hasOwn(Base, 'openSidebar')) Base = Object.getPrototypeOf(Base);
+    const name = instance.name;
+    const parent = instance.parent;
+    if (!Base || !name || !parent) return null;
+    return () => {
+      try {
+        const open = instance.rendered && Base.current === name;
+        if (!open && parent.rendered) Base.openSidebar(name, parent);
+      } catch (error) {
+        console.error('Range Finder |', error);
+      }
+    };
+  } catch (error) {
+    console.error('Range Finder |', error);
+    return null;
+  }
+}
+
 export const pf2eRows = [
   {
     hooks: ['renderCharacterSheetPF2e'],
@@ -56,14 +86,16 @@ export const pf2eRows = [
     selector: '.item.attack[data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), ...strikeAt(hudActor(app), el.dataset.index, el.dataset.itemId) }),
     host: nameHost,
-    ghostTargets: hudGhost
+    ghostTargets: hudGhost,
+    onPreview: hudSidebarRestore
   },
   {
     hooks: ['renderSpellsSidebarPF2eHUD'],
     selector: '.item[data-item-type="spell"][data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), item: spellOf(hudActor(app), el.dataset.entryId, el.dataset.itemId), actionIndex: null }),
     host: nameHost,
-    ghostTargets: hudGhost
+    ghostTargets: hudGhost,
+    onPreview: hudSidebarRestore
   },
   {
     hooks: ['renderItemsSidebarPF2eHUD'],
@@ -73,7 +105,8 @@ export const pf2eRows = [
       return item?.type === 'weapon' ? { actor: hudActor(app), item, actionIndex: null } : null;
     },
     host: controlsHost,
-    ghostTargets: hudGhost
+    ghostTargets: hudGhost,
+    onPreview: hudSidebarRestore
   },
   {
     hooks: ['renderPersistentShortcutsPF2eHUD'],
@@ -101,7 +134,8 @@ export const pf2eRows = [
       return item ? { actor, item, actionIndex: null } : null;
     },
     host: el => el.querySelector(':scope > .controls') ?? nameHost(el),
-    ghostTargets: hudGhost
+    ghostTargets: hudGhost,
+    onPreview: hudSidebarRestore
   },
   {
     // Skills sidebar: rows carry the action's compendium uuid (avoids pf2e-hud's key mismatches, e.g. disable-device).
@@ -112,6 +146,7 @@ export const pf2eRows = [
       return item ? { actor: hudActor(app), item, actionIndex: null } : null;
     },
     host: el => el.querySelector(':scope > .controls') ?? nameHost(el),
-    ghostTargets: hudGhost
+    ghostTargets: hudGhost,
+    onPreview: hudSidebarRestore
   }
 ];

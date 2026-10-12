@@ -3,6 +3,7 @@ import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { pf2eAdapter } from '../scripts/adapters/pf2e.mjs';
 import { FEAT_ACTIONS, SKILL_ACTIONS } from '../scripts/adapters/pf2e-ranges.mjs';
+import { hudSidebarRestore, pf2eRows } from '../scripts/adapters/pf2e-rows.mjs';
 import { Triggers } from '../scripts/ui/Triggers.mjs';
 
 const actor = {
@@ -76,4 +77,54 @@ test('listItems: strikes, all spellcasting spells, other weapons, skill actions'
   assert.deepEqual(byGroup('other'), ['Sling']);
   assert.ok(byGroup('skills').includes('Demoralize'));
   assert.ok(byGroup('skills').includes('Bon Mot'));
+});
+
+function fakeHud({ rendered = true, current = 'actions', parentRendered = true } = {}) {
+  const opened = [];
+  class Base {
+    static current = current;
+    static openSidebar(name, parent) { if (this !== Base) throw new TypeError('brand check'); opened.push([name, parent]); }
+  }
+  class Sub extends Base {}
+  const parent = { rendered: parentRendered };
+  const instance = Object.assign(new Sub(), { name: 'actions', parent, rendered });
+  const registry = new Map([['pf2e-hud-sidebar', instance]]);
+  return { registry, opened, parent, Base };
+}
+
+test('hudSidebarRestore reopens a closed sidebar via the class owning openSidebar', () => {
+  const { registry, opened, parent, Base } = fakeHud({ rendered: false });
+  Base.current = null;
+  const restore = hudSidebarRestore({}, {}, registry);
+  restore();
+  assert.deepEqual(opened, [['actions', parent]]);
+});
+
+test('hudSidebarRestore leaves a still-open sidebar alone', () => {
+  const { registry, opened } = fakeHud();
+  hudSidebarRestore({}, {}, registry)();
+  assert.deepEqual(opened, []);
+});
+
+test('hudSidebarRestore does nothing when the parent HUD is gone, or without a sidebar', () => {
+  const { registry, opened } = fakeHud({ rendered: false, parentRendered: false });
+  hudSidebarRestore({}, {}, registry)();
+  assert.deepEqual(opened, []);
+  assert.equal(hudSidebarRestore({}, {}, new Map()), null);
+  assert.equal(hudSidebarRestore({}, {}, undefined), null);
+});
+
+test('hudSidebarRestore never throws', () => {
+  const { registry, Base } = fakeHud({ rendered: false });
+  Base.openSidebar = () => { throw new Error('boom'); };
+  const quiet = console.error;
+  console.error = () => {};
+  try { assert.doesNotThrow(() => hudSidebarRestore({}, {}, registry)()); } finally { console.error = quiet; }
+});
+
+test('pf2e-hud sidebar rows restore the sidebar; the persistent shortcuts row does not', () => {
+  const sidebar = pf2eRows.filter(r => r.hooks.some(h => /Sidebar/.test(h)));
+  assert.equal(sidebar.length, 5);
+  assert.ok(sidebar.every(r => r.onPreview === hudSidebarRestore));
+  assert.equal(pf2eRows.find(r => r.persistentHud).onPreview, undefined);
 });

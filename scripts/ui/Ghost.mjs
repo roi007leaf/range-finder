@@ -6,7 +6,6 @@ const log = (...args) => console.error('Range Finder |', ...args);
 
 export class Ghost {
   #held = new Map();
-  #revealed = false;
 
   constructor({ mode = () => 'fade', doc = globalThis.document, appFor = () => null } = {}) {
     Object.assign(this, { mode, doc, appFor });
@@ -32,8 +31,6 @@ export class Ghost {
       }
       if (sticky) entry.pins++;
       else entry.previews++;
-      // Any new hold fades every held window again.
-      this.#revealed = false;
       this.#setFaded(true);
     } catch (error) {
       log(error);
@@ -49,26 +46,14 @@ export class Ghost {
     if (entry.pins + entry.previews > 0) return;
     this.#restore(el, entry);
     this.#held.delete(el);
-    if (!this.#held.size) this.#revealed = false;
   }
 
   releaseAll() {
     for (const [el, entry] of this.#held) this.#restore(el, entry);
     this.#held.clear();
-    this.#revealed = false;
   }
 
   isGhosted(el) { return this.#held.has(el); }
-
-  get revealed() { return this.#revealed; }
-
-  /** Show/hide the faded windows while holds persist. Returns whether anything is held. */
-  toggleRevealed() {
-    if (!this.#held.size) return false;
-    this.#revealed = !this.#revealed;
-    this.#setFaded(!this.#revealed);
-    return true;
-  }
 
   #setFaded(faded) {
     for (const [el, entry] of this.#held) {

@@ -33,10 +33,6 @@
         "Name": "Clear my ranges",
         "Hint": "Clear your pinned ranges and previews."
       },
-      "Reveal": {
-        "Name": "Show/hide faded windows",
-        "Hint": "While a range is shown, bring faded sheets and HUD panels back (and fade them again)."
-      },
       "ClearShared": {
         "Name": "Clear shared ranges (GM)",
         "Hint": "Clear every shared range for all players."
