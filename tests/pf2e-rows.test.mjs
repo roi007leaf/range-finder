@@ -63,6 +63,7 @@ test('listItems: strikes, all spellcasting spells, other weapons, skill actions'
   const haste = { uuid: 'Actor.a.Item.haste', name: 'Haste', type: 'spell', system: { range: { value: '30 feet' } } };
   const caster = {
     ...actor,
+    type: 'character',
     items: [longbow, sling, { id: 'bm', type: 'feat', slug: 'bon-mot', name: 'Bon Mot', uuid: 'Actor.a.Item.bm' }],
     system: { ...actor.system, actions: [{ item: longbow }, { item: hidden, visible: false }] },
     spellcasting: { collections: new Map([['arcane', new Map([['arc', arc]])], ['wand', new Map([['haste', haste], ['arc', arc]])]]) }

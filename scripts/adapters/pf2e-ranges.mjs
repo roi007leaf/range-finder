@@ -20,8 +20,7 @@ export const SKILL_ACTIONS = {
   'treat-poison': { name: 'Treat Poison', uuid: 'Compendium.pf2e.actionspf2e.Item.KjoCEEmPGTeFE4hh', range: { kind: 'adjacent' } },
   'treat-disease': { name: 'Treat Disease', uuid: 'Compendium.pf2e.actionspf2e.Item.TC7OcDa7JlWbqMaN', range: { kind: 'adjacent' } },
   steal: { name: 'Steal', uuid: 'Compendium.pf2e.actionspf2e.Item.RDXXE7wMrSPCLv5k', range: { kind: 'adjacent' } },
-  'palm-an-object': { name: 'Palm an Object', uuid: 'Compendium.pf2e.actionspf2e.Item.ijZ0DDFpMkWqaShd', range: { kind: 'adjacent' } },
-  'encouraging-words': { name: 'Encouraging Words', uuid: 'Compendium.pf2e.actionspf2e.Item.e2ePMDa7ixbLRryj', range: { kind: 'radius', feet: 30 } }
+  'palm-an-object': { name: 'Palm an Object', uuid: 'Compendium.pf2e.actionspf2e.Item.ijZ0DDFpMkWqaShd', range: { kind: 'adjacent' } }
 };
 
 /** Feat / feature actions that are ranged skill checks: shown when the actor owns them (by slug). */

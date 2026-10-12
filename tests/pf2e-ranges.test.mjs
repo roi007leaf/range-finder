@@ -11,7 +11,7 @@ test('every action entry has a name, a compendium uuid and a known rule', () => 
     assert.ok(KINDS.includes(entry.range.kind), slug);
     if (['radius', 'emanation'].includes(entry.range.kind)) assert.ok(entry.range.feet > 0, slug);
   }
-  assert.equal(Object.keys(SKILL_ACTIONS).length, 14);
+  assert.equal(Object.keys(SKILL_ACTIONS).length, 13);
   assert.equal(Object.keys(FEAT_ACTIONS).length, 77);
 });
 

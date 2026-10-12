@@ -110,8 +110,26 @@ test('compendium uuid pins resolve without the pack (Review Focus 5)', () => {
   assert.equal(specFor({ actor: makeActor(), item: index }).bands[0].max, 30, 'fromUuidSync index entry');
 });
 
+test('skillActionItems: non-creatures get no base skill actions; Encouraging Words is a feat row only', () => {
+  const loot = { ...makeActor(), type: 'loot' };
+  assert.deepEqual(skillActionItems(loot), []);
+  assert.equal(skillActionItems({ ...makeActor(), type: 'hazard' }).length, 0);
+  assert.equal(skillActionItems({ ...makeActor(), isOfType: type => type === 'creature' }).length, Object.keys(SKILL_ACTIONS).length);
+  assert.equal(skillActionItems({ ...makeActor(), type: 'character' }).length, Object.keys(SKILL_ACTIONS).length);
+  assert.equal(SKILL_ACTIONS['encouraging-words'], undefined);
+  const owned = skillActionItems({ ...makeActor({ items: [feat('encouraging-words', 'Encouraging Words')] }), type: 'character' });
+  assert.equal(owned.length, Object.keys(SKILL_ACTIONS).length + 1);
+  assert.equal(owned.filter(i => i.slug === 'encouraging-words' || i.name === 'Encouraging Words').length, 1);
+  assert.equal(skillActionItems({ ...makeActor({ items: [feat('encouraging-words', 'Encouraging Words')] }), type: 'loot' }).length, 1);
+});
+
+test('modifiedFeet ignores modifiers without a numeric set', () => {
+  const actor = { ...makeActor({ items: [feat('legendary-laugh')] }), type: 'character' };
+  assert.equal(skillSpec(actor, skillEntry(action('demoralize'))).bands[0].max, 60);
+});
+
 test('skillActionItems: every base action plus owned feat actions', () => {
-  const items = skillActionItems(makeActor({ items: [feat('bon-mot', 'Bon Mot'), feat('toughness')] }));
+  const items = skillActionItems({ ...makeActor({ items: [feat('bon-mot', 'Bon Mot'), feat('toughness')] }), type: 'character' });
   assert.deepEqual(items.slice(0, 2).map(i => i.slug), ['demoralize', 'feint']);
   assert.equal(items.length, Object.keys(SKILL_ACTIONS).length + 1);
   assert.equal(items.at(-1).name, 'Bon Mot');

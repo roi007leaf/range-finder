@@ -94,6 +94,7 @@ function modifiedFeet(slug, owned, options) {
   for (const [featSlug, mod] of Object.entries(SKILL_MODIFIERS)) {
     if (!mod.actions.includes(slug) || !owned.has(featSlug)) continue;
     if (mod.toggle && !options.has(mod.toggle)) continue;
+    if (!Number.isFinite(mod.set)) continue;
     feet = Math.max(feet, mod.set);
   }
   return feet;
@@ -107,9 +108,12 @@ export function skillSpec(actor, entry, itemName = entry?.name ?? '') {
   return makeSpec({ kind: 'radius', bands: singleBand(feet), itemName });
 }
 
-/** Token HUD "Skill actions": every base action (stand-ins) plus the feat actions the actor owns. */
+const CREATURE_TYPES = new Set(['character', 'npc', 'familiar']);
+const isCreature = actor => actor?.isOfType?.('creature') ?? CREATURE_TYPES.has(actor?.type);
+
+/** Token HUD "Skill actions": every base action (stand-ins) for creatures plus the feat actions the actor owns. */
 export function skillActionItems(actor) {
-  const base = Object.values(SKILL_ACTIONS).map(entry => skillItem(entry.uuid));
-  const feats = itemsOf(actor).filter(item => (item?.type === 'feat' || item?.type === 'action') && FEAT_ACTIONS[slugOf(item)] && !SKILL_ACTIONS[slugOf(item)]);
+  const base = isCreature(actor) ? Object.values(SKILL_ACTIONS).map(entry => skillItem(entry.uuid)) : [];
+  const feats = itemsOf(actor).filter(item => (item?.type === 'feat' || item?.type === 'action') && FEAT_ACTIONS[slugOf(item)]);
   return [...base, ...feats];
 }
