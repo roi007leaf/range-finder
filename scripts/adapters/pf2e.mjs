@@ -13,6 +13,26 @@ function traitNumber(item, slug) {
   return null;
 }
 
+/** SF2e area weapons: "Area burst 10 ft", "Auto-fire cone 15 ft". Mirrors CharacterPF2e#prepareAreaAttack. */
+export function areaSuffix(item, fallback = 0) {
+  const traits = traitsOf(item);
+  const base = Number(item?.system?.range) || item?.range?.increment || fallback || 0;
+  if (traits.includes('automatic')) {
+    const half = Math.floor(base / 2);
+    return `Auto-fire cone ${Math.max(5, half - (half % 5))} ft`;
+  }
+  let area = item?.system?.traits?.config?.area ?? null;
+  if (!area?.type) {
+    const match = traits.map(trait => String(trait).match(/^area-(burst|cone|line)(?:-(\d+))?$/)).find(Boolean);
+    if (match) area = { type: match[1], value: match[2] ? Number(match[2]) : null };
+  }
+  if (!area?.type) return null;
+  const value = Number(area.value) || (area.type === 'burst' ? 5 : base);
+  return value > 0 ? `Area ${area.type} ${value} ft` : `Area ${area.type}`;
+}
+
+const withSuffix = (bands, suffix) => (suffix && bands.length ? [{ ...bands[0], label: `${bands[0].label} · ${suffix}` }, ...bands.slice(1)] : bands);
+
 function weaponSpec(actor, item) {
   const name = item.name ?? '';
   const range = item.range ?? null;
@@ -23,14 +43,16 @@ function weaponSpec(actor, item) {
   if (melee) {
     const reach = actor?.getReach?.({ action: 'attack', weapon: item }) || 5;
     const reachBand = { min: 0, max: reach, penalty: 0, tone: 'reach', label: `Reach ${reach} ft` };
+    const suffix = areaSuffix(item, reach);
     // Real PF2e melee weapons have range null; a thrown melee weapon carries its increment in a thrown-N trait.
     const thrown = traitNumber(item, 'thrown') ?? (range?.increment || null);
-    if (thrown) return makeSpec({ kind: 'increments', bands: incrementBands(thrown, thrown * 6), overlays: [reachBand, ...overlays], itemName: name });
-    return makeSpec({ kind: 'reach', bands: [reachBand], overlays, itemName: name });
+    if (thrown) return makeSpec({ kind: 'increments', bands: withSuffix(incrementBands(thrown, thrown * 6), suffix), overlays: [reachBand, ...overlays], itemName: name });
+    return makeSpec({ kind: 'reach', bands: withSuffix([reachBand], suffix), overlays, itemName: name });
   }
+  const suffix = areaSuffix(item);
   const increments = range?.increment ? incrementBands(range.increment, range.max ?? range.increment * 6) : null;
-  if (increments?.length) return makeSpec({ kind: 'increments', bands: increments, overlays, itemName: name });
-  if (range?.max > 0) return makeSpec({ kind: 'radius', bands: singleBand(range.max), overlays, itemName: name });
+  if (increments?.length) return makeSpec({ kind: 'increments', bands: withSuffix(increments, suffix), overlays, itemName: name });
+  if (range?.max > 0) return makeSpec({ kind: 'radius', bands: withSuffix(singleBand(range.max), suffix), overlays, itemName: name });
   return noneSpec('Range: —', name);
 }
 

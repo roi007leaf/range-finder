@@ -165,3 +165,16 @@ test('pf2e-hud rows fade only the sidebar, and the bar when enabled', async () =
   assert.deepEqual(spells.ghostTargets(row, { includeBar: true }).map(e => e.id), ['sidebar', 'bar']);
   assert.ok(pf2eRows.filter(r => r.hooks.some(h => h.endsWith('PF2eHUD'))).every(r => r.ghostTargets));
 });
+
+test('SF2e area weapons get an area suffix on the first band (no shape drawn)', async () => {
+  const { areaSuffix } = await import('../scripts/adapters/pf2e.mjs');
+  const rifle = { ...weapon('Rotolaser', { range: { increment: 30, max: 180 }, traits: ['automatic'] }), system: { range: 30, traits: { value: ['automatic'] } } };
+  assert.equal(specFor({ actor, item: rifle }).bands[0].label, '30 ft · Auto-fire cone 15 ft');
+  assert.equal(specFor({ actor, item: rifle }).bands[1].label, '60 ft · –2');
+  const launcher = { ...weapon('Launcher', { range: { increment: 60, max: 360 } }), system: { range: 60, traits: { value: ['area-burst-10'], config: { area: { type: 'burst', value: 10 } } } } };
+  assert.equal(specFor({ actor, item: launcher }).bands[0].label, '60 ft · Area burst 10 ft');
+  const flamer = weapon('Flamer', { range: { increment: 30, max: 180 }, traits: ['area-cone'] });
+  assert.equal(areaSuffix(flamer), 'Area cone 30 ft');
+  assert.equal(areaSuffix(longbow), null);
+  assert.equal(specFor({ actor, item: longbow }).bands[0].label, '100 ft');
+});
