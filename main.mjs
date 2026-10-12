@@ -4,6 +4,7 @@ import { TargetBadges } from './scripts/canvas/TargetBadges.mjs';
 import { makeText, sceneGeometry, sceneUnits } from './scripts/canvas/geometry.mjs';
 import { MODULE_ID, readSettings, registerSettings } from './scripts/settings.mjs';
 import { Ghost } from './scripts/ui/Ghost.mjs';
+import { headerButtonV1, headerControlV2 } from './scripts/ui/HeaderButton.mjs';
 import { PinManager } from './scripts/ui/PinManager.mjs';
 import { TokenHudList } from './scripts/ui/TokenHudList.mjs';
 import { Triggers } from './scripts/ui/Triggers.mjs';
@@ -200,6 +201,24 @@ Hooks.on('closeTokenHUD', () => {
 for (const hook of ['refreshToken', 'canvasPan']) {
   Hooks.on(hook, () => { try { hudList?.reposition(); } catch (error) { report(error); } });
 }
+
+const headerDeps = () => ({ adapter, triggers, localize: key => game.i18n.localize(key) });
+// AppV2 item sheets (dnd5e's ItemSheet5e is a DocumentSheetV2, not an ItemSheetV2): the header controls menu.
+Hooks.on('getHeaderControlsDocumentSheetV2', (app, controls) => {
+  try {
+    if (!triggers) return;
+    const control = headerControlV2(app, headerDeps());
+    if (control) controls.push(control);
+  } catch (error) { report(error); }
+});
+// AppV1 item sheets (PF2e/SF2e): a header button.
+Hooks.on('getItemSheetHeaderButtons', (app, buttons) => {
+  try {
+    if (!triggers) return;
+    const button = headerButtonV1(app, headerDeps());
+    if (button) buttons.unshift(button);
+  } catch (error) { report(error); }
+});
 
 // Foundry v14: drag previews are Token clones; `isPreview` (PlaceableObject getter) is true and `_original`
 // is the real token. The preview's document x/y is updated live while dragging.
