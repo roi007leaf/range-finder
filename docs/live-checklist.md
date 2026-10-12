@@ -1,4 +1,4 @@
-# Range Finder — live checklist (Foundry v14: PF2e, SF2e, D&D 5e, other systems)
+# Range Finder — live checklist (Foundry v14: PF2e, SF2e, D&D 5e, Daggerheart, Draw Steel, Crucible, other systems)
 
 Setup: square-grid scene, a PF2e character with longbow, dagger, whip, a fist (basic unarmed strike) and spells (Electric Arc 30 ft, Shocking Grasp touch, Bless emanation, Wish varies); a few enemy tokens at 20–300 ft; one wall between the character and an enemy. pf2e-hud enabled.
 
@@ -68,6 +68,26 @@ Setup: square grid (5 ft), a character with a longbow, dagger, glaive, Fire Bolt
 - [ ] Scene in metres (1.5 m grid): labels and badges in `m` with one decimal.
 - [ ] Item sheet header menu has "Show range"; Shift+click shares.
 - [ ] Token HUD 📏 list works as in PF2e (Attacks / Spells / Other).
+
+## Daggerheart world
+
+- [ ] Character sheet: 📏 on weapons and domain cards / features with a ranged action; adversary sheet: 📏 on its attack. Pressing 📏 on a compact row does not expand / collapse it.
+- [ ] Close weapon: Melee / Very Close / Close bands (5 / 15 / 30 ft); a Very Far action draws to 300 ft and is labelled `Very Far · 60+ ft`.
+- [ ] Badges agree with the system's own range check (target hover distance): a target 6 squares diagonal reads `40 ft` and is out of Close range; a Very Far target past 300 ft shows `✓`.
+- [ ] Custom scene range settings (scene config) change the bands; "Range field" is not in the module settings.
+
+## Draw Steel world
+
+- [ ] Ability rows on hero and NPC sheets show 📏: `Melee 1`, `Ranged 10`, melee-or-ranged shows both; aura / burst draws a radius; cube / wall / line show their "within" distance.
+- [ ] Special-distance abilities show a disabled 📏 with `Range: special`; self abilities have none.
+- [ ] Kit distance bonuses are reflected; badges match the bands (equidistant diagonals).
+
+## Crucible world
+
+- [ ] Actions tab, inventory, talents, spells and sidebar rows show 📏; movement actions and sheet-hidden actions are not in the Token HUD list.
+- [ ] Sword (1 ft) reaches the adjacent square; a 30 ft bow's band ends 7 squares out (6 empty squares between), matching the badges and the system's targeting.
+- [ ] An action with a minimum range: targets closer than the minimum are `✗`.
+- [ ] Unlinked token: pin an action from the world actor's sheet; the token's range shows (not "unavailable").
 
 ## Other system (generic)
 

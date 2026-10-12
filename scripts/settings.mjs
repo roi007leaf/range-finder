@@ -19,7 +19,7 @@ export const SETTINGS = {
 };
 
 // Foundry localizes setting names, hints and choices itself, so the default localize is the identity.
-const BUILT_IN_SYSTEMS = new Set(['pf2e', 'sf2e', 'dnd5e']);
+const BUILT_IN_SYSTEMS = new Set(['pf2e', 'sf2e', 'dnd5e', 'daggerheart', 'draw-steel', 'crucible']);
 
 // The range field is only for systems without a built-in adapter, so it's hidden for the rest.
 export function registerSettings(onChange, settings = game.settings, localize = key => key, systemId = null) {

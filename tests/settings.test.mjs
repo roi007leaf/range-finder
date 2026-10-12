@@ -35,7 +35,7 @@ test('registers every setting with the spec defaults and scopes', () => {
 });
 
 test('rangeField is hidden for systems with a built-in adapter, visible otherwise', () => {
-  for (const [systemId, config] of [['pf2e', false], ['sf2e', false], ['dnd5e', false], ['swade', true], [null, true]]) {
+  for (const [systemId, config] of [['pf2e', false], ['sf2e', false], ['dnd5e', false], ['daggerheart', false], ['draw-steel', false], ['crucible', false], ['swade', true], [null, true]]) {
     const settings = fakeSettings();
     registerSettings(() => {}, settings, undefined, systemId);
     assert.equal(settings.registered.get('rangeField').config, config, String(systemId));

@@ -16,7 +16,18 @@ See an item's, attack's, spell's or skill action's range right on the canvas —
 - **Gets out of the way**: the window you clicked from fades while the range is shown; from PF2e HUD only the open sidebar fades (the persistent bar too if you enable *Also hide PF2e HUD bar*, off by default); faded windows are click-through and come back when the range is cleared (Esc, unpin) or the preview key is released. If a PF2e HUD sidebar closes while you preview from it (e.g. you drag a token), it reopens on the same tab when you release the key. The Token HUD list never fades. In *Minimize* mode, windows that aren't a minimizable application (such as frameless PF2e HUD sidebars) are left as they are.
 - Optional: hatch squares without line of effect, colorblind palette, outline-only bands.
 
-Works on square grids (per-square bands) and hex/gridless scenes (rings). Built in: PF2e, SF2e, D&D 5e (6.x). Other systems use a generic adapter (see below). Area shapes (bursts, cones) are not drawn — ranges only.
+Works on square grids (per-square bands) and hex/gridless scenes (rings). Area shapes (bursts, cones) are not drawn — ranges only.
+
+## Supported systems
+
+- **PF2e** — strikes, weapons, spells, skill actions and feat actions with range increments, reach, volley and per-use boosts; sheets, PF2e HUD and Token HUD.
+- **SF2e** — as PF2e, plus area and automatic weapons' area labels.
+- **D&D 5e (6.x)** — weapons, spells and feature activities: normal / long range (`Disadv.`), reach, touch and template ranges; character and NPC sheets.
+- **Daggerheart** — weapon attacks, adversary attacks and domain card / feature actions as nested Melee → Very Far bands from the scene's range settings, measured like the system's own range check.
+- **Draw Steel** — ability distances in squares (melee, ranged, melee-or-ranged, aura / burst, cube / wall / line "within"); ability rows on the sheet.
+- **Crucible** — weapon ranges and actions (strikes, talents, spells) with minimum / maximum range, measured base to base; action, inventory, talent, spell and sidebar rows.
+
+Any other system gets the generic fallback (Token HUD and item sheet 📏, see [Other systems](#other-systems)). Want proper support for yours? Open an issue to request an adapter.
 
 ## Keybindings
 
