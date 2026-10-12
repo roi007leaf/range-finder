@@ -62,10 +62,12 @@ test('generic listItems groups by item type and skips items without a range', ()
   assert.deepEqual(list.map(e => [e.item.name, e.group, e.actionIndex]), [['Bow', 'attacks', null], ['Bolt', 'spells', null], ['Wand', 'other', null]]);
 });
 
-test('registry', () => {
+test('registry', async () => {
+  const { dnd5eAdapter } = await import('../scripts/adapters/dnd5e.mjs');
   assert.equal(getAdapter('pf2e'), pf2eAdapter);
   assert.equal(getAdapter('sf2e'), pf2eAdapter);
-  assert.equal(getAdapter('dnd5e'), genericAdapter);
+  assert.equal(getAdapter('dnd5e'), dnd5eAdapter);
+  assert.equal(getAdapter('daggerheart'), genericAdapter);
   const custom = { id: 'x', specFor: () => null, cellMeasure: () => () => 0, distance: () => 0, rows: [] };
   registerAdapter('custom-system', custom);
   assert.equal(getAdapter('custom-system'), custom);
