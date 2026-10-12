@@ -67,7 +67,9 @@ test('registry', async () => {
   assert.equal(getAdapter('pf2e'), pf2eAdapter);
   assert.equal(getAdapter('sf2e'), pf2eAdapter);
   assert.equal(getAdapter('dnd5e'), dnd5eAdapter);
-  assert.equal(getAdapter('daggerheart'), genericAdapter);
+  const { daggerheartAdapter } = await import('../scripts/adapters/daggerheart.mjs');
+  assert.equal(getAdapter('daggerheart'), daggerheartAdapter);
+  assert.equal(getAdapter('unknown-system'), genericAdapter);
   const custom = { id: 'x', specFor: () => null, cellMeasure: () => () => 0, distance: () => 0, rows: [] };
   registerAdapter('custom-system', custom);
   assert.equal(getAdapter('custom-system'), custom);
