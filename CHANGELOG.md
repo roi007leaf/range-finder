@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 (prerelease)
 
 - **Fix:** after a Shift+click, the 📏 no longer keeps a teal focus ring once the range is turned off (PF2e HUD shortcuts and elsewhere).
 
