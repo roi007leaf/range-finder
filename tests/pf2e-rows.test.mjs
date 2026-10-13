@@ -129,7 +129,14 @@ test('pf2e-hud sidebar rows restore the sidebar; the persistent shortcuts row do
   assert.equal(pf2eRows.find(r => r.persistentHud).onPreview, undefined);
 });
 
-test('PF2e Unified Spellbook: rows inserted after render get the button; entry-collection spells resolve; virtual rows skipped', async () => {
+test('pf2e-hud spells sidebar: heightened signature (virtual) rows match', () => {
+  const row = pf2eRows.find(r => r.hooks.includes('renderSpellsSidebarPF2eHUD'));
+  const doc = new JSDOM(`<div class="item" data-item-type="spell" data-item-id="a"></div>
+    <div class="item virtual" data-item-type="spell-slot-group" data-item-id="a"></div>`).window.document;
+  assert.equal(doc.querySelectorAll(row.selector).length, 2);
+});
+
+test('PF2e Unified Spellbook: rows inserted after render get the button; entry-collection spells resolve; heightened signature rows included', async () => {
   const dom = new JSDOM('<div class="application"><section class="tab known-spells"><ol class="spellcastingEntry-list"></ol></section></div>');
   const doc = dom.window.document;
   const arc = { uuid: 'Actor.a.Item.arc', name: 'Electric Arc', type: 'spell', system: { range: { value: '30 feet' } } };
@@ -149,6 +156,6 @@ test('PF2e Unified Spellbook: rows inserted after render get the button; entry-c
   await new Promise(r => setTimeout(r, 20));
   assert.ok(doc.querySelector('[data-item-id="arc"]:not(.virtual) .item-controls .range-finder-btn'));
   assert.ok(doc.querySelector('[data-item-id="haste"] .item-controls .range-finder-btn'), 'scroll spell resolved through its entry');
-  assert.equal(doc.querySelector('.virtual .range-finder-btn'), null);
-  assert.equal(doc.querySelectorAll('.range-finder-btn').length, 2, 'no duplicates after the observer re-decorates');
+  assert.ok(doc.querySelector('.virtual .item-controls .range-finder-btn'), 'heightened signature row');
+  assert.equal(doc.querySelectorAll('.range-finder-btn').length, 3, 'no duplicates after the observer re-decorates');
 });

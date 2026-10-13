@@ -69,8 +69,9 @@ export const pf2eRows = [
   {
     hooks: ['renderActorSheetPF2e'],
     // Also matches PF2e Unified Spellbook's list (same li.spell markup, with data-entry-id), which that module
-    // inserts after the sheet renders — `observe` re-decorates when it appears. Virtual slot rows are skipped.
-    selector: 'li.spell[data-item-id]:not(.virtual)',
+    // inserts after the sheet renders — `observe` re-decorates when it appears. Includes `.virtual` rows: a
+    // spontaneous caster's signature spell heightened to other ranks (same item, same range).
+    selector: 'li.spell[data-item-id]',
     resolve: (el, app) => ({ actor: app.actor, item: spellOf(app.actor, el.dataset.entryId, el.dataset.itemId), actionIndex: null }),
     host: controlsHost,
     observe: true
@@ -94,7 +95,8 @@ export const pf2eRows = [
   },
   {
     hooks: ['renderSpellsSidebarPF2eHUD'],
-    selector: '.item[data-item-type="spell"][data-item-id]',
+    // Signature spells heightened to other ranks render as `.virtual` rows typed "spell-slot-group".
+    selector: '.item:is([data-item-type="spell"], [data-item-type="spell-slot-group"])[data-item-id]',
     resolve: (el, app) => ({ actor: hudActor(app), item: spellOf(hudActor(app), el.dataset.entryId, el.dataset.itemId), actionIndex: null }),
     host: nameHost,
     ghostTargets: hudGhost,
