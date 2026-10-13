@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.2 (prerelease)
+
+- **Fix:** the 📏 now appears on heightened rows of signature spells (2nd rank and up) in the PF2e HUD spells sidebar and on the actor sheet.
+
 ## 0.2.1 (prerelease)
 
 - **Fix:** after a Shift+click, the 📏 no longer keeps a teal focus ring once the range is turned off (PF2e HUD shortcuts and elsewhere).
