@@ -102,6 +102,9 @@ export class Triggers {
       event.preventDefault();
       event.stopPropagation();
       if (active) this.#toggle(row, event.shiftKey);
+      // A Shift+click makes Chrome treat focus as keyboard focus, leaving the focus ring on after the pin is
+      // cleared. Mouse activations (detail > 0) drop focus; keyboard ones (Enter/Space) keep it.
+      if (event.type === 'click' && event.detail > 0) control.blur?.();
     };
     control.addEventListener('click', activate);
     control.addEventListener('keydown', event => {

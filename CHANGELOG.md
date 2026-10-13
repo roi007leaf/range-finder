@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **Fix:** after a Shift+click, the 📏 no longer keeps a teal focus ring once the range is turned off (PF2e HUD shortcuts and elsewhere).
+
 ## 0.2.0 (prerelease)
 
 - **Volley on the targets:** a token inside a volley zone now shows the total penalty on its own badge, e.g. "10 ft · –2 Volley", on a red plate.

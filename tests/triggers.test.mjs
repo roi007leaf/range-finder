@@ -276,3 +276,22 @@ test('button tooltip mentions the hold-to-preview key; omitted when unbound or d
   assert.equal(doc.querySelector('[data-id="wish"] .range-finder-btn').dataset.tooltip, 'Range: varies');
   assert.equal(make(() => null).querySelector('[data-id="bow"] .range-finder-btn').dataset.tooltip, 'RANGE_FINDER.Button.Show');
 });
+
+test('a mouse click (incl. Shift+click) drops focus from the 📏 so no focus ring lingers; keyboard keeps it', async () => {
+  const { JSDOM } = await import('jsdom');
+  const { Triggers } = await import('../scripts/ui/Triggers.mjs');
+  const { makeSpec, singleBand } = await import('../scripts/core/spec.mjs');
+  const dom = new JSDOM('<div class="application"><ul><li class="row" data-id="bow"></li></ul></div>');
+  const doc = dom.window.document;
+  const item = { uuid: 'Item.bow', spec: makeSpec({ kind: 'radius', bands: singleBand(60) }) };
+  const adapter = { specFor: ({ item: i }) => i.spec, rows: [{ hooks: ['r'], selector: 'li.row', resolve: () => ({ actor: {}, item }) }] };
+  const t = new Triggers({ adapter, pins: { pinFor: () => null, toggle: () => 'pinned' }, resolveToken: () => ({ id: 't' }), doc });
+  t.decorate(doc.querySelector('.application'), {}, 'r');
+  const btn = doc.querySelector('.range-finder-btn');
+  btn.focus();
+  btn.dispatchEvent(new dom.window.MouseEvent('click', { bubbles: true, shiftKey: true, detail: 1 }));
+  assert.notEqual(doc.activeElement, btn);
+  btn.focus();
+  btn.dispatchEvent(new dom.window.KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  assert.equal(doc.activeElement, btn);
+});
