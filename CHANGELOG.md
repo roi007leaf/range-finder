@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.0
+
+First stable release, published to foundryvtt.com. Everything from the 0.x prereleases below, unchanged.
+
 ## 0.2.2 (prerelease)
 
 - **Fix:** the 📏 now appears on heightened rows of signature spells (2nd rank and up) in the PF2e HUD spells sidebar and on the actor sheet.
