@@ -12,6 +12,8 @@ export const SETTINGS = {
   ghostMode: { scope: 'client', type: String, default: 'fade', choices: choices('ghostMode', ['fade', 'minimize', 'off']) },
   ghostPersistentHud: { scope: 'client', type: Boolean, default: false },
   allowSharing: { scope: 'world', type: Boolean, default: true },
+  // Foundry user roles: 1 Player, 2 Trusted Player, 3 Assistant GM.
+  shareRole: { scope: 'world', type: Number, default: 1, choices: choices('shareRole', [1, 2, 3]) },
   badgesCombatOnly: { scope: 'world', type: Boolean, default: false },
   tokenHudButton: { scope: 'client', type: Boolean, default: true }
 };
@@ -35,4 +37,11 @@ export function registerSettings(onChange, settings = game.settings, localize = 
 
 export function readSettings(settings = game.settings) {
   return Object.fromEntries(Object.keys(SETTINGS).map(key => [key, settings.get(MODULE_ID, key)]));
+}
+
+/** Shift+click sharing: GMs always; others when sharing is on and their role is at least `shareRole`. */
+export function canShare(user, { allowSharing = true, shareRole = 1 } = {}) {
+  if (!user) return false;
+  if (user.isGM) return true;
+  return Boolean(allowSharing) && (Number(user.role) || 0) >= (Number(shareRole) || 1);
 }

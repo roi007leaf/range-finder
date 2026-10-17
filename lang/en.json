@@ -87,7 +87,16 @@
       },
       "allowSharing": {
         "Name": "Range Finder: allow sharing",
-        "Hint": "Let players Shift+click to show a range to everyone."
+        "Hint": "Let players Shift+click to show a range to everyone. GMs can always share."
+      },
+      "shareRole": {
+        "Name": "Range Finder: who can share",
+        "Hint": "Lowest player role allowed to Shift+click a range to everyone (when sharing is allowed). GMs can always share.",
+        "Choices": {
+          "1": "Players",
+          "2": "Trusted Players",
+          "3": "Assistant GMs"
+        }
       },
       "badgesCombatOnly": {
         "Name": "Range Finder: badges only in combat",

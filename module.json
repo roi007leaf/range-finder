@@ -28,13 +28,5 @@
       "path": "lang/en.json"
     }
   ],
-  "socket": true,
-  "relationships": {
-    "recommends": [
-      {
-        "id": "pf2e-hud",
-        "type": "module"
-      }
-    ]
-  }
+  "socket": true
 }

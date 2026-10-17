@@ -2,7 +2,7 @@ import { getAdapter, registerAdapter } from './scripts/adapters/index.mjs';
 import { RangeOverlay } from './scripts/canvas/RangeOverlay.mjs';
 import { TargetBadges } from './scripts/canvas/TargetBadges.mjs';
 import { makeText, sceneGeometry, sceneUnits } from './scripts/canvas/geometry.mjs';
-import { MODULE_ID, readSettings, registerSettings } from './scripts/settings.mjs';
+import { MODULE_ID, canShare, readSettings, registerSettings } from './scripts/settings.mjs';
 import { Ghost } from './scripts/ui/Ghost.mjs';
 import { headerButtonV1, headerControlV2 } from './scripts/ui/HeaderButton.mjs';
 import { PinManager } from './scripts/ui/PinManager.mjs';
@@ -166,7 +166,7 @@ Hooks.once('ready', () => {
     build,
     onChange: schedule,
     broadcast: message => game.socket.emit(SOCKET, message),
-    allowShare: () => readSettings().allowSharing,
+    allowShare: () => canShare(game.user, readSettings()),
     ghost
   });
   triggers = new Triggers({
@@ -188,7 +188,10 @@ Hooks.once('ready', () => {
     try {
       if (!message) return;
       if (senderId && message.userId !== senderId) return;
-      if (message.action === 'clearAll' && !game.users.get(senderId ?? message.userId)?.isGM) return;
+      const sender = game.users.get(senderId ?? message.userId);
+      if (message.action === 'clearAll' && !sender?.isGM) return;
+      // Ignore shares from users the GM hasn't allowed to share (a modified client could still broadcast).
+      if (message.action === 'pin' && !canShare(sender, readSettings())) return;
       pins.receive(message);
     } catch (error) { report(error); }
   });

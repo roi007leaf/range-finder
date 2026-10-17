@@ -6,7 +6,7 @@ See an item's, attack's, spell's or skill action's range right on the canvas —
 - **📏 on the Token HUD** — every system: right-click your token, click 📏 and pick from its attacks, spells, skill actions and other items. Only items with a range or a note are listed (note-only rows are disabled, with the note as tooltip). Click a row to pin, Shift+click to share, hold Alt over a row to preview. The list follows the HUD when the token moves or the canvas pans. Turn the button off with *Token HUD button*.
 - **📏 in item sheet headers** — every system: an owned item's sheet gets a 📏 control (in the header menu on V2 sheets) that pins it for the owner's token.
 - **GM clear tool** — GMs get a *Range Finder — clear shared ranges* button in the Token scene controls (and an unbound keybinding) that removes every shared range for all players.
-- **Shift+click** shares the range with everyone, tinted in your player color (needs the **Allow sharing** world setting). Shift+click an already pinned range to share it.
+- **Shift+click** shares the range with everyone, tinted in your player color (needs the **Allow sharing** world setting; **Who can share** limits it to Trusted Players or Assistant GMs, and GMs can always share). Shift+click an already pinned range to share it.
 - **Hold Alt** while hovering a row (or its 📏) to preview its range without pinning. Alt is also Foundry's "highlight objects" key; rebind either in Configure Controls.
 - **Boost bands** (PF2e/SF2e): when you have a per-use range boost for the item, its range always shows an extra outer band, lightly filled, hatched and outlined in its own colour, for what you reach only with the boost: a spell's `Reach Spell · 60 ft` (+30 ft; touch spells out to 30 ft; also Grasping Spirits Spell, Wand of Reaching), a strike's `Extending · Reach 60 ft`, Giant's Lunge, Looming Gait, or a thrown boost such as `Galloping Launch · 150 ft` or Throw and Catch (also on melee weapons with thrown-N). Targets in that ring show the boost's name instead of ✓ (`45 ft · Reach Spell`). Several boosts each get a band when they reach further, ordered outward.
 - **Bands**: PF2e range increments `60 ft · –2`, D&D 5e normal/long range (`600 ft · Disadv.`), reach (PF2e's 10 ft reach includes the double diagonal), volley zones. PF2e thrown melee weapons show both the reach band and the thrown bands. SF2e area and automatic weapons show their area: `30 ft · Auto-fire cone 15 ft`.
@@ -53,6 +53,7 @@ Rebindable in **Configure Controls**.
 | Also hide PF2e HUD bar | client | off |
 | Token HUD button | client | on |
 | Allow sharing | world | on |
+| Who can share | world | Players |
 | Badges only in combat | world | off |
 
 ## Other systems

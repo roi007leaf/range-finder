@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Who can share:** a new world setting limits Shift+click sharing to Trusted Players or Assistant GMs (default: all players). GMs can always share, and shares from users who aren't allowed are ignored by everyone else.
+- PF2e HUD is no longer listed as a recommended module, so Foundry doesn't offer it on install. It's still supported when installed.
+
 ## 1.0.0
 
 First stable release, published to foundryvtt.com. Everything from the 0.x prereleases below, unchanged.
